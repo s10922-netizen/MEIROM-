@@ -3,7 +3,7 @@ from groq import Groq
 import smtplib
 from email.message import EmailMessage
 
-# הקוד הזה מושך את המפתח מההגדרות הסודיות של האתר
+# משיכת המפתח מהכספת הסודית של Streamlit
 GROQ_API_KEY = st.secrets["GROQ_KEY"]
 MY_EMAIL = "meiromp10@gmail.com"
 APP_PASSWORD = "cyty rvau owas uaeg"
@@ -25,7 +25,7 @@ if submit:
             try:
                 prompt = f"Business: {biz_name}. Problem: {problem}. Give 3 business tips in Hebrew."
                 completion = client.chat.completions.create(
-                   model="llama-3.1-70b-versatile",
+                    model="llama-3.1-70b-versatile", # המודל המעודכן
                     messages=[{"role": "user", "content": prompt}],
                     temperature=0.3
                 )
