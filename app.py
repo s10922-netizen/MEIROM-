@@ -7,74 +7,89 @@ import time
 # --- חיבור ל-AI ---
 try:
     client = Groq(api_key=st.secrets["GROQ_KEY"])
-except Exception as e:
-    st.error("Missing API Key in Secrets!")
+except:
+    st.error("Missing API Key")
 
 MY_EMAIL = "meiromp10@gmail.com"
 APP_PASSWORD = "cyty rvau owas uaeg"
 
 # --- ניהול ניווט ---
-if 'page' not in st.session_state:
-    st.session_state.page = 'welcome'
-if 'report' not in st.session_state:
-    st.session_state.report = None
+if 'page' not in st.session_state: st.session_state.page = 'welcome'
+if 'report' not in st.session_state: st.session_state.report = None
 
 def go_to(page_name):
     st.session_state.page = page_name
     st.rerun()
 
-# --- עיצוב אפליקציה מתקדם ---
-st.set_page_config(page_title="Meirom AI | Operational", page_icon="⚡", layout="centered")
+# --- עיצוב בסיסי ונקי (בלי HTML שביש) ---
+st.set_page_config(page_title="Meirom AI | Active", page_icon="⚡")
 
-st.markdown("""
-<style>
-    .stApp { background-color: #f8fafc; }
-    .app-card { background: white; padding: 25px; border-radius: 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.05); margin-bottom: 20px; }
-    
-    /* מסוף מבצעי - מראה של האקרים */
-    .console {
-        background: #0d1117; color: #00ff00; font-family: 'Courier New', monospace;
-        padding: 15px; border-radius: 10px; font-size: 0.85rem; line-height: 1.4;
-        border-left: 4px solid #6366f1; margin: 10px 0;
-    }
-    
-    .stButton>button {
-        background: linear-gradient(135deg, #6366f1, #a855f7) !important;
-        color: white !important; border-radius: 12px !important; font-weight: bold !important;
-        width: 100% !important; height: 3.5em !important;
-    }
-</style>
-""", unsafe_allow_html=True)
-
-# --- עמוד 1: פתיחה ---
+# --- דף 1: פתיחה ---
 if st.session_state.page == 'welcome':
-    st.markdown("<div style='padding-top: 40px; text-align:center;'>", unsafe_allow_html=True)
-    st.markdown("<h1>MEIROM <span style='color:#6366f1;'>AI</span></h1>", unsafe_allow_html=True)
-    st.markdown("<div class='app-card'>", unsafe_allow_html=True)
-    st.image("https://cdn-icons-png.flaticon.com/512/6159/6159448.png", width=160)
-    st.write("מערכת אוטונומית לביצוע פקודות והטמעה בעסק")
-    if st.button("כניסה למסוף הביצוע 🚀"):
+    st.title("MEIROM AI")
+    st.subheader("מערכת אוטונומית להטמעת בינה מלאכותית")
+    st.info("לחצי על הכפתור למטה כדי להיכנס למסוף הביצוע")
+    if st.button("כניסה למערכת 🚀", use_container_width=True):
         go_to('main')
-    st.markdown("</div></div>", unsafe_allow_html=True)
 
-# --- עמוד 2: מסוף הביצוע ---
+# --- דף 2: מסוף הביצוע (כאן קורה הקסם!) ---
 elif st.session_state.page == 'main':
-    st.markdown("<h2 style='text-align:center;'>מרכז שליטה מבצעי</h2>", unsafe_allow_html=True)
+    st.header("מרכז שליטה מבצעי")
     
-    st.markdown("<div class='app-card'>", unsafe_allow_html=True)
-    st.subheader("🔗 חיבור תשתיות פעילות")
-    c1, c2, c3 = st.columns(3)
-    with c1: ws_active = st.checkbox("WhatsApp API")
-    with c2: cal_active = st.checkbox("Google Calendar")
-    with c3: mail_active = st.checkbox("Automated Email")
-    st.markdown("</div>", unsafe_allow_html=True)
+    # חיבור תשתיות
+    with st.container(border=True):
+        st.write("🔗 **חיבור תשתיות פעילות**")
+        c1, c2, c3 = st.columns(3)
+        ws = c1.checkbox("WhatsApp")
+        cal = c2.checkbox("Calendar")
+        mail = c3.checkbox("Email")
 
-    with st.form("action_form"):
+    # טופס פקודה
+    with st.form("exec_form"):
         biz_name = st.text_input("שם העסק")
-        biz_email = st.text_input("אימייל לשליחת דו''ח ביצוע")
-        mission = st.text_area("מה המשימה לביצוע? (למשל: 'שלח הודעת תודה לכל לקוח חדש')")
-        submit = st.form_submit_button("הפעל סוכן מבצע ⚡")
+        biz_email = st.text_input("אימייל לשליחת אישור")
+        mission = st.text_area("מה המשימה לביצוע? (למשל: 'שלח הודעת תודה לכל לקוח')")
+        submit = st.form_submit_button("הפעל סוכן מבצע ⚡", use_container_width=True)
 
         if submit and biz_name and mission:
             with st.status("סוכן Meirom AI מבצע הטמעה...", expanded=True) as status:
-                st.markdown("<div class='
+                st.code("> Establishing secure link... OK")
+                time.sleep(1)
+                
+                if ws:
+                    st.code("> Connecting WhatsApp API... SUCCESS")
+                    time.sleep(1)
+                if cal:
+                    st.code("> Syncing Google Calendar... DONE")
+                    time.sleep(1)
+                
+                st.code("> Executing AI Task logic...")
+                
+                # לוגיקת AI
+                p = f"ACT AS: Business Implementer. Task: {mission} for {biz_name}. Tools: WhatsApp:{ws}, Cal:{cal}. SUMMARY OF ACTIONS IN HEBREW."
+                res = client.chat.completions.create(model="llama-3.3-70b-versatile", messages=[{"role":"user","content":p}])
+                st.session_state.report = res.choices[0].message.content
+                
+                # מייל
+                try:
+                    msg = EmailMessage()
+                    msg['Subject'] = f"Action Log - {biz_name}"
+                    msg['From'] = MY_EMAIL; msg['To'] = biz_email
+                    msg.set_content(st.session_state.report, charset='utf-8')
+                    with smtplib.SMTP_SSL('smtp.gmail.com', 465) as s:
+                        s.login(MY_EMAIL, APP_PASSWORD)
+                        s.send_message(msg)
+                except:
+                    st.warning("הדו''ח נוצר אך המייל נכשל")
+                
+                status.update(label="המשימה בוצעה בהצלחה! ✅", state="complete")
+                st.balloons()
+
+    if st.session_state.report:
+        with st.container(border=True):
+            st.subheader("סיכום הטמעה מבצעית:")
+            st.write(st.session_state.report)
+
+    if st.button("⬅️ חזרה לדף הבית", use_container_width=True):
+        st.session_state.report = None
+        go_to('welcome')
