@@ -4,13 +4,14 @@ import smtplib
 from email.message import EmailMessage
 
 # משיכת המפתח מהכספת הסודית של Streamlit
+# ודאי שהגדרת GROQ_KEY בתוך ה-Secrets ב-Streamlit Cloud
 GROQ_API_KEY = st.secrets["GROQ_KEY"]
 MY_EMAIL = "meiromp10@gmail.com"
 APP_PASSWORD = "cyty rvau owas uaeg"
 
 client = Groq(api_key=GROQ_API_KEY)
 
-st.set_page_config(page_title="Meiron AI Solutions", page_icon="🚀")
+st.set_page_config(page_title="Meirom AI Solutions", page_icon="🚀")
 st.title("🚀 Meiron AI Solutions")
 
 with st.form("main_form"):
@@ -23,15 +24,18 @@ if submit:
     if biz_name and problem and target_email:
         with st.spinner("ה-AI בונה פתרון..."):
             try:
+                # הנחיה לעברית ברורה
                 prompt = f"Business: {biz_name}. Problem: {problem}. Give 3 business tips in Hebrew."
-              completion = client.chat.completions.create(
-                    model="llama-3.3-70b-versatile", # זה המודל הכי מעודכן כרגע
+                
+                # שימוש במודל הכי מעודכן שזמין היום
+                completion = client.chat.completions.create(
+                    model="llama-3.3-70b-versatile",
                     messages=[{"role": "user", "content": prompt}],
                     temperature=0.3
-                
                 )
                 ai_solution = completion.choices[0].message.content
 
+                # הכנת המייל בפורמט שתומך בעברית
                 msg = EmailMessage()
                 msg.set_content(f"שלום!\n\nהנה הפתרון עבור {biz_name}:\n\n{ai_solution}\n\nבברכה, מירום.", charset='utf-8')
                 msg['Subject'] = f"ייעוץ AI עבור {biz_name}"
