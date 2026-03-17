@@ -5,16 +5,16 @@ from email.message import EmailMessage
 import time
 import urllib.parse
 
-# --- חיבורים ---
+# --- Connections ---
 try:
     client = Groq(api_key=st.secrets["GROQ_KEY"])
 except:
-    st.error("Missing Groq Key!")
+    st.error("Missing Secrets!")
 
 MY_EMAIL = "meiromp10@gmail.com"
 APP_PASSWORD = "cyty rvau owas uaeg"
 
-# --- ניהול ניווט ---
+# --- Navigation ---
 if 'page' not in st.session_state: st.session_state.page = 'welcome'
 if 'plan' not in st.session_state: st.session_state.plan = None
 if 'price' not in st.session_state: st.session_state.price = "0"
@@ -23,70 +23,63 @@ def go_to(p):
     st.session_state.page = p
     st.rerun()
 
-# --- עיצוב האתר ---
+# --- Design ---
 st.set_page_config(page_title="Meirom Magic AI", page_icon="🧚‍♀️")
 st.markdown("""
 <style>
-    .stApp { background-color: #ffffff; }
-    h1, h2 { color: #7c3aed !important; text-align: center; }
+    .stApp { background-color: #ffffff; direction: rtl; }
+    h1, h2, p, span { text-align: right !important; color: #7c3aed; }
     .stButton>button { 
         background: linear-gradient(90deg, #a78bfa, #7c3aed); color: white;
-        border-radius: 15px; font-weight: bold; border: none; height: 3.5em; width: 100%;
+        border-radius: 15px; font-weight: bold; width: 100%; height: 3.5em;
     }
     .cal-button {
-        display: inline-block; padding: 15px 25px; background-color: #7c3aed;
+        display: block; padding: 15px; background-color: #7c3aed;
         color: white !important; text-decoration: none !important; border-radius: 15px;
-        font-weight: bold; text-align: center; width: 100%; margin: 10px 0;
-        box-shadow: 0px 4px 10px rgba(124, 58, 237, 0.2);
+        font-weight: bold; text-align: center; margin: 10px 0;
     }
 </style>
 """, unsafe_allow_html=True)
 
-# --- דף 1: ברוכים הבאים ---
+# --- Page 1: Welcome ---
 if st.session_state.page == 'welcome':
-    st.title("MEIROM MAGIC AI 🧚‍♀️")
+    st.markdown("<h1>MEIROM MAGIC AI 🧚‍♀️</h1>", unsafe_allow_html=True)
     st.image("fairy_logo.png", width=350)
-    with st.container(border=True):
-        st.subheader("ברוכה הבאה לעולם האוטומציות הקסום")
-        if st.button("בואי נתחיל!"):
-            go_to('options')
-
-# --- דף 2: בחירת מסלול ---
-elif st.session_state.page == 'options':
-    st.header("בחרי חבילת הטמעה")
-    c1, c2, c3 = st.columns(3)
-    plans = [("Basic", "₪250"), ("Pro", "₪750"), ("Enterprise", "₪2,500")]
-    for i, (p_name, p_price) in enumerate(plans):
-        with [c1, c2, c3][i]:
-            with st.container(border=True):
-                st.markdown(f"### {p_name}\n## {p_price}")
-                if st.button(f"בחר {p_name}", key=f"p_{i}"):
-                    st.session_state.plan, st.session_state.price = p_name, p_price
-                    go_to('payment')
-
-# --- דף 3: תשלום אשראי ---
-elif st.session_state.page == 'payment':
-    st.header("סליקה מאובטחת")
-    with st.container(border=True):
-        st.write(f"מסלול: {st.session_state.plan} | סכום: {st.session_state.price}")
-        st.text_input("מספר כרטיס אשראי", placeholder="0000 0000 0000 0000")
-        if st.button("אשר תשלום והמשך"):
-            with st.spinner("מאמת..."):
-                time.sleep(1)
-            go_to('main')
-    if st.button("חזור"):
+    st.write("ברוכה הבאה לעולם האוטומציות הקסום")
+    if st.button("בואי נתחיל"):
         go_to('options')
 
-# --- דף 4: מסוף הביצוע ---
+# --- Page 2: Options ---
+elif st.session_state.page == 'options':
+    st.header("בחרי חבילה")
+    c1, c2, c3 = st.columns(3)
+    p_list = [("Basic", "250"), ("Pro", "750"), ("Enterprise", "2500")]
+    for i, (name, price) in enumerate(p_list):
+        with [c1, c2, c3][i]:
+            st.info(f"### {name}\n## {price} ILS")
+            if st.button(f"Select {name}", key=f"p{i}"):
+                st.session_state.plan, st.session_state.price = name, price
+                go_to('payment')
+
+# --- Page 3: Payment ---
+elif st.session_state.page == 'payment':
+    st.header("סליקה מאובטחת")
+    st.write(f"Plan: {st.session_state.plan} | Price: {st.session_state.price}")
+    st.text_input("Card Number", placeholder="0000 0000 0000 0000")
+    if st.button("Pay Now"):
+        with st.spinner("Processing..."): time.sleep(1)
+        go_to('main')
+    if st.button("Back"): go_to('options')
+
+# --- Page 4: Main Console ---
 elif st.session_state.page == 'main':
-    st.header(f"מסוף ניהול: {st.session_state.plan}")
+    st.header(f"Console: {st.session_state.plan}")
     with st.sidebar:
         st.image("fairy_logo.png", width=100)
-        st.subheader("הגדרות")
-        g_on = st.toggle("סנכרון יומן", value=True)
-        w_on = st.toggle("הודעת WhatsApp")
+        g_on = st.toggle("Google Calendar", value=True)
+        w_on = st.toggle("WhatsApp", value=True)
 
     with st.form("magic_form"):
-        biz_name = st.text_input("שם העסק")
-        biz_email = st.text_input("אימייל לדו''ח")
-        task = st.text_area("
+        biz_name = st.text_input("Business Name")
+        biz_email = st.text_input("Client Email")
+        task_desc = st.
