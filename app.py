@@ -3,115 +3,110 @@ from groq import Groq
 import smtplib
 from email.message import EmailMessage
 
-# --- הגדרות אבטחה וחיבור ---
+# --- הגדרות חיבור ואבטחה ---
 GROQ_API_KEY = st.secrets["GROQ_KEY"]
 MY_EMAIL = "meiromp10@gmail.com"
 APP_PASSWORD = "cyty rvau owas uaeg"
-
 client = Groq(api_key=GROQ_API_KEY)
 
-# --- עיצוב ממשק המערכת ---
-st.set_page_config(page_title="Meirom AI | Enterprise System", page_icon="🏢", layout="wide")
+# --- ניהול הניווט (Session State) ---
+if 'page' not in st.session_state:
+    st.session_state.page = 'welcome'
+if 'plan' not in st.session_state:
+    st.session_state.plan = None
 
-st.markdown("""
-    <style>
-    .main-title { font-size: 50px; font-weight: bold; color: #1E3A8A; text-align: center; }
-    .sub-title { font-size: 20px; color: #4B5563; text-align: center; margin-bottom: 30px; }
-    </style>
-    <div class="main-title">🏢 Meirom AI Solutions</div>
-    <div class="sub-title">מערכת אוטונומית להטמעה וניהול בינה מלאכותית בעסקים</div>
-    """, unsafe_allow_html=True)
+def go_to(page_name):
+    st.session_state.page = page_name
+    st.rerun()
 
-# --- סרגל צד לניהול המנוי ---
-with st.sidebar:
-    st.image("https://cdn-icons-png.flaticon.com/512/4712/4712139.png", width=100)
-    st.header("ניהול חשבון מנוי")
-    subscription_plan = st.selectbox(
-        "בחר מסלול הטמעה:",
-        ["Basic (ייעוץ ואוטומציה בסיסית)", "Pro (הטמעת סוכני AI פעילים)", "Enterprise (מחלקה דיגיטלית מלאה)"]
-    )
-    st.write("---")
-    st.info("המנוי כולל: עדכוני מודלים אוטומטיים, ניטור שגיאות ותחזוקת בוטים 24/7.")
+# --- עיצוב כללי ---
+st.set_page_config(page_title="Meirom AI Enterprise", page_icon="🏢", layout="centered")
 
-# --- טופס הזנת נתונים לעסק ---
-with st.container():
-    st.markdown("### 🛠️ הגדרת הטמעה חדשה")
-    with st.form("main_logic_form"):
-        col1, col2 = st.columns(2)
-        with col1:
-            biz_name = st.text_input("שם העסק / החברה")
-            biz_email = st.text_input("אימייל למשלוח הדו''ח והחיוב")
-        with col2:
-            biz_sector = st.selectbox("תחום פעילות", ["קמעונאות", "שירותים מקצועיים", "מסחר מקוון", "אחר"])
-            challenge = st.text_area("תאר את התהליך שתרצה להפוך לאוטומטי (צוואר בקבוק)")
+# --- עמוד 1: עמוד פתיחה ---
+if st.session_state.page == 'welcome':
+    st.markdown("<h1 style='text-align: center;'>🏢 Meirom AI Solutions</h1>", unsafe_allow_html=True)
+    st.markdown("<p style='text-align: center; font-size: 20px;'>ברוכים הבאים לעתיד של ניהול העסקים. אנחנו מטמיעים בינה מלאכותית שהופכת לחלק בלתי נפרד מהצוות שלך.</p>", unsafe_allow_html=True)
+    
+    st.image("https://cdn-icons-png.flaticon.com/512/4712/4712139.png", width=200)
+    
+    col1, col2, col3 = st.columns([1,2,1])
+    with col2:
+        if st.button("בואו נתחיל - לבחירת מסלול הטמעה 🚀", use_container_width=True):
+            go_to('options')
+
+# --- עמוד 2: בחירת אופציות ומסלולים ---
+elif st.session_state.page == 'options':
+    st.title("🛠️ בחרי את רמת ההטמעה")
+    st.write("כדי שה-AI יתאים לעסק שלך בצורה מושלמת, בחרי את המסלול המתאים:")
+    
+    col1, col2, col3 = st.columns(3)
+    
+    with col1:
+        st.subheader("Basic")
+        st.write("ייעוץ ואוטומציה בסיסית")
+        if st.button("בחר בייסיק", key="btn_basic"):
+            st.session_state.plan = "Basic"
+            go_to('main')
+            
+    with col2:
+        st.subheader("Pro")
+        st.write("הטמעת סוכני AI פעילים")
+        if st.button("בחר פרו ⭐", key="btn_pro"):
+            st.session_state.plan = "Pro"
+            go_to('main')
+            
+    with col3:
+        st.subheader("Enterprise")
+        st.write("מחלקה דיגיטלית מלאה")
+        if st.button("בחר אנטרפרייז", key="btn_ent"):
+            st.session_state.plan = "Enterprise"
+            go_to('main')
+            
+    if st.button("⬅️ חזרה לדף הבית"):
+        go_to('welcome')
+
+# --- עמוד 3: טופס ההטמעה והפעלת ה-AI ---
+elif st.session_state.page == 'main':
+    st.title(f"⚙️ הטמעת מערכת: {st.session_state.plan}")
+    st.write(f"הגדרת תשתית Meirom AI עבור העסק שלך.")
+    
+    with st.form("main_form"):
+        biz_name = st.text_input("שם העסק")
+        biz_email = st.text_input("אימייל למשלוח הדו''ח")
+        challenge = st.text_area("תארי את הצוואר בקבוק בעסק (מה היית רוצה שה-AI ינהל?)")
         
-        submit_btn = st.form_submit_button("הפעל הטמעה ושלח תוכנית חודשית")
-
-# --- לוגיקת הביצוע ---
-if submit_btn:
-    if biz_name and challenge and biz_email:
-        with st.spinner(f"ה-AI מבצע הטמעה במסלול {subscription_plan}..."):
-            try:
-                system_prompt = f"""
-                אתה ה-CTO של Meirom AI Solutions. 
-                הלקוח נרשם למסלול: {subscription_plan}.
-                עליך לייצר מסמך 'אישור הטמעה' עבור {biz_name} בתחום {biz_sector}.
-                
-                המסמך חייב לכלול:
-                1. איזה כלי AI הטמעת לו עכשיו (למשל: סוכן אוטומטי למיילים, בוט ניהול מלאי).
-                2. ערך חודשי: למה המנוי הזה חוסך לו משכורת של עובד.
-                3. מה ה-AI יעשה עבורו באופן אוטונומי בכל שבוע במהלך החודש הקרוב.
-                
-                כתוב בעברית עסקית, בטוחה בעצמה וטכנולוגית.
-                """
-                
-                response = client.chat.completions.create(
-                    model="llama-3.3-70b-versatile",
-                    messages=[{"role": "user", "content": system_prompt}],
-                    temperature=0.4
-                )
-                
-                full_report = response.choices[0].message.content
-
-                # --- שליחת המייל ללקוח ---
-                msg = EmailMessage()
-                msg.set_content(f"""
-שלום רב,
-כאן המערכת האוטונומית של Meirom AI Solutions.
-
-השלמנו את הגדרת התשתית הראשונית עבור {biz_name}.
-סוג המנוי הפעיל: {subscription_plan}
-
-להלן דו''ח ההטמעה ותוכנית הפעולה החודשית שלך:
------------------------------------------------------------
-{full_report}
------------------------------------------------------------
-
-המערכת תמשיך לרוץ ברקע ולשפר את ביצועי העסק באופן אוטומטי. 
-העדכון הבא יישלח אליך בעוד שבוע בדיוק.
-
-בברכה,
-Meirom AI System
-""", charset='utf-8')
-
-                msg['Subject'] = f"אישור הטמעה ותוכנית עבודה חודשית - {biz_name}"
-                msg['From'] = MY_EMAIL
-                msg['To'] = biz_email
-
-                with smtplib.SMTP_SSL('smtp.gmail.com', 465) as smtp:
-                    smtp.login(MY_EMAIL, APP_PASSWORD)
-                    smtp.send_message(msg)
-                
-                st.success(f"✅ ההטמעה הושלמה! המייל נשלח לכתובת {biz_email}")
-                st.balloons()
-                
-                with st.expander("צפה בדו''ח ההטמעה המלא שנוצר"):
-                    st.markdown(full_report)
-
-            except Exception as e:
-                st.error(f"שגיאה בתהליך: {e}")
-    else:
-        st.warning("בבקשה מלאי את כל השדות כדי שנוכל להתחיל בהטמעה.")
-
-st.write("---")
-st.caption("Meirom AI Solutions © 2026 | Powered by Groq & Llama 3.3")
+        submit = st.form_submit_button("הפעל הטמעה סופית ⚡")
+        
+    if submit:
+        if biz_name and challenge and biz_email:
+            with st.spinner("ה-AI של Meirom Solutions מבצע הטמעה..."):
+                try:
+                    prompt = f"Role: CTO of Meirom AI Solutions. Goal: Implement AI for {biz_name} under {st.session_state.plan} plan. Issue: {challenge}. Provide a monthly implementation report in Hebrew."
+                    
+                    response = client.chat.completions.create(
+                        model="llama-3.3-70b-versatile",
+                        messages=[{"role": "user", "content": prompt}],
+                        temperature=0.4
+                    )
+                    report = response.choices[0].message.content
+                    
+                    # שליחת מייל (נשאר אותו דבר)
+                    msg = EmailMessage()
+                    msg.set_content(f"שלום!\nהוטמעה מערכת {st.session_state.plan} עבור {biz_name}.\n\nדו''ח:\n{report}", charset='utf-8')
+                    msg['Subject'] = f"אישור הטמעה - Meirom AI"
+                    msg['From'] = MY_EMAIL
+                    msg['To'] = biz_email
+                    
+                    with smtplib.SMTP_SSL('smtp.gmail.com', 465) as smtp:
+                        smtp.login(MY_EMAIL, APP_PASSWORD)
+                        smtp.send_message(msg)
+                        
+                    st.success("ההטמעה הושלמה! המייל נשלח.")
+                    st.balloons()
+                    st.markdown(report)
+                    
+                except Exception as e:
+                    st.error(f"שגיאה: {e}")
+                    
+    if st.button("⬅️ חזרה לבחירת מסלול"):
+        go_to('options')
