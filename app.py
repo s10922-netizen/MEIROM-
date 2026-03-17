@@ -92,4 +92,27 @@ elif st.session_state.page == 'main':
                     with st.status("הפייה עובדת...") as status:
                         # חילוץ זמן
                         prompt = f"Extract date and time from: '{task}'. Use YYYYMMDDTHHMMSSZ format. Return ONLY the code."
-                        res_time = client.chat.completions.create(model="llama-3.3-70b-versatile", messages=[{"role":"
+                        res_time = client.chat.completions.create(model="llama-3.3-70b-versatile", messages=[{"role":"user","content":prompt}])
+                        clean_time = res_time.choices[0].message.content.strip()
+                        
+                        # לינק יומן
+                        if google_active:
+                            event_url = f"https://www.google.com/calendar/render?action=TEMPLATE&text={urllib.parse.quote(f'פגישה: {biz_name}')}&dates={clean_time}/{clean_time}"
+                            st.markdown(f"### [📅 לחצי כאן להוספה ליומן בטלפון]({event_url})")
+
+                        # וואטסאפ
+                        if whatsapp_active:
+                            wa_url = f"https://wa.me/?text={urllib.parse.quote(f'היי {biz_name}, הפגישה נקבעה!')}"
+                            st.markdown(f"[![WhatsApp](https://img.shields.io/badge/WhatsApp-Send-25D366?style=for-the-badge&logo=whatsapp)]({wa_url})")
+
+                        # מייל
+                        p_report = f"Summary in HEBREW for {biz_name}. Task: {task}."
+                        res_report = client.chat.completions.create(model="llama-3.3-70b-versatile", messages=[{"role":"user","content":p_report}])
+                        report_text = res_report.choices[0].message.content
+                        
+                        status.update(label="הקסם הושלם!", state="complete")
+                        st.success("בוצע!")
+                        st.info(report_text)
+                        st.balloons()
+
+    if st.button("⬅️ יציאה"): go_to('welcome')
