@@ -2,10 +2,9 @@ import streamlit as st
 from groq import Groq
 import smtplib
 from email.message import EmailMessage
-import urllib.parse
 
 # --- הגדרות ---
-GROQ_API_KEY = "תדביקי_פה_מפתח_חדש_מ_GROQ"
+GROQ_API_KEY = "gsk_jUtWaZ7q2YzI98BNVkWGdyb3FY8eSMyzhQL3irkSdWRuLFfWn" # ודאי שהמפתח תקין
 MY_EMAIL = "meiromp10@gmail.com"
 APP_PASSWORD = "cyty rvau owas uaeg"
 
@@ -18,32 +17,25 @@ with st.form("main_form"):
     biz_name = st.text_input("שם העסק")
     problem = st.text_area("מה הבעיה?")
     target_email = st.text_input("מייל למשלוח")
-    submit = st.form_submit_button("צור פתרון מנצח")
+    submit = st.form_submit_button("צור פתרון עכשיו")
 
 if submit:
     if biz_name and problem and target_email:
-        with st.spinner("ה-AI בונה לכם פתרון ותמונה..."):
+        with st.spinner("מייצר פתרון מקצועי..."):
             try:
-                # בקשת פתרון בטקסט פשוט - בלי עיצובים מסובכים שמשבשים עברית
-                prompt = f"Business: {biz_name}. Problem: {problem}. Give 3 simple tips in Hebrew. No numbers, no special symbols, just plain text."
+                # הנחיה שמכריחה אותו לכתוב עברית נקייה
+                prompt = f"Business: {biz_name}. Problem: {problem}. Give 3 professional business tips in Hebrew. Keep it simple and clear. No special characters."
                 
                 completion = client.chat.completions.create(
                     model="llama-3.1-70b-versatile",
                     messages=[{"role": "user", "content": prompt}],
-                    temperature=0.4
+                    temperature=0.5
                 )
                 ai_solution = completion.choices[0].message.content
 
-                # יצירת תמונה מ-Pollinations לפי שם העסק
-                encoded_biz = urllib.parse.quote(biz_name)
-                image_url = f"https://pollinations.ai/p/professional_business_logo_for_{encoded_biz}_modern_ai_style?width=1080&height=1080&seed=42&model=flux"
-
-                # הצגת התמונה באתר
-                st.image(image_url, caption=f"החזון החדש עבור {biz_name}")
-
-                # שליחת המייל
+                # --- התיקון לשגיאת ה-ASCII ---
                 msg = EmailMessage()
-                msg.set_content(f"היי!\nהנה הפתרונות עבור {biz_name}:\n\n{ai_solution}\n\nבברכה, מירום.")
+                msg.set_content(f"שלום!\n\nהנה הפתרונות עבור {biz_name}:\n\n{ai_solution}\n\nבברכה, מירום.", charset='utf-8') # כאן הוספנו תמיכה בעברית!
                 msg['Subject'] = f"ייעוץ AI עבור {biz_name}"
                 msg['From'] = MY_EMAIL
                 msg['To'] = target_email
@@ -52,7 +44,7 @@ if submit:
                     smtp.login(MY_EMAIL, APP_PASSWORD)
                     smtp.send_message(msg)
                 
-                st.success("זה עבד! בדקו את המייל.")
+                st.success("✅ הצלחה! הפתרון נשלח למייל בעברית תקינה.")
                 st.balloons()
                 
             except Exception as e:
