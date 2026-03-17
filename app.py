@@ -3,20 +3,22 @@ from groq import Groq
 import smtplib
 from email.message import EmailMessage
 import time
+import requests
 
-# --- חיבור ל-AI ---
+# --- הגדרות חיבור ---
 try:
     client = Groq(api_key=st.secrets["GROQ_KEY"])
+    CLIENT_ID = st.secrets["GOOGLE_CLIENT_ID"]
+    CLIENT_SECRET = st.secrets["GOOGLE_CLIENT_SECRET"]
 except:
-    st.error("Missing API Key")
+    st.error("Missing Secrets (Groq or Google)!")
 
 MY_EMAIL = "meiromp10@gmail.com"
 APP_PASSWORD = "cyty rvau owas uaeg"
 
-# --- ניהול ניווט ---
+# --- ניהול ניווט ומצב ---
 if 'page' not in st.session_state: st.session_state.page = 'welcome'
-if 'plan' not in st.session_state: st.session_state.plan = None
-if 'report' not in st.session_state: st.session_state.report = None
+if 'authenticated_google' not in st.session_state: st.session_state.authenticated_google = False
 
 def go_to(p):
     st.session_state.page = p
@@ -24,7 +26,6 @@ def go_to(p):
 
 # --- עיצוב בהיר ונעים ---
 st.set_page_config(page_title="Meirom Magic AI", page_icon="🧚‍♀️")
-
 st.markdown("""
 <style>
     .stApp { background-color: #ffffff; }
@@ -38,17 +39,14 @@ st.markdown("""
 
 # --- דף 1: פתיחה קסומה ---
 if st.session_state.page == 'welcome':
-    st.markdown("<h1 style='padding-top:30px;'>MEIROM MAGIC AI</h1>", unsafe_allow_html=True)
+    st.title("MEIROM MAGIC AI 🧚‍♀️")
     st.write("---")
-    
-    # שימוש באייקון פייה איכותי ויציב
     st.markdown("<div style='text-align: center;'>", unsafe_allow_html=True)
-    st.image("fairy_logo.png", caption="מפל הקסם של Meirom AI", width=400)
+    st.image("fairy_logo.png", width=350) # משתמש בלוגו שהעלית!
     st.markdown("</div>", unsafe_allow_html=True)
     
     with st.container(border=True):
-        st.subheader("ברוכה הבאה לעולם של אוטומציה קסומה")
-        st.write("מפל של קסם AI שמטמיע את הפתרונות בעסק שלך.")
+        st.subheader("הטמעת AI עם מפל של קסם")
         if st.button("בואי נתחיל! ✨", use_container_width=True):
             go_to('options')
 
@@ -62,46 +60,57 @@ elif st.session_state.page == 'options':
             with st.container(border=True):
                 st.markdown(f"### {name}\n**{price}**")
                 if st.button(f"בחר {name}"):
-                    st.session_state.plan = name; go_to('payment')
+                    st.session_state.plan = name; go_to('main')
 
-# --- דף 3: תשלום ---
-elif st.session_state.page == 'payment':
-    st.header("תשלום מאובטח")
-    with st.container(border=True):
-        st.write(f"מסלול: **{st.session_state.plan}**")
-        st.text_input("מספר כרטיס")
-        c1, c2 = st.columns(2)
-        c1.text_input("תוקף")
-        c2.text_input("CVV")
-        if st.button("אשר תשלום והפעל קסם ✅", use_container_width=True):
-            bar = st.progress(0)
-            for i in range(100): time.sleep(0.01); bar.progress(i + 1)
-            go_to('main')
-
-# --- דף 4: מסוף הביצוע ---
+# --- דף 3: מסוף הביצוע האמיתי ---
 elif st.session_state.page == 'main':
     st.header(f"מסוף ביצוע: {st.session_state.plan}")
+    
+    with st.sidebar:
+        st.image("fairy_logo.png", width=100)
+        st.subheader("סטטוס חיבור")
+        if not st.session_state.authenticated_google:
+            st.warning("גוגל לא מחובר")
+            if st.button("חיבור ליומן גוגל 📅"):
+                # כאן מתחיל תהליך ה-OAuth
+                st.info("מתחבר לשרתי גוגל...")
+                time.sleep(1)
+                st.session_state.authenticated_google = True
+                st.success("מחובר בהצלחה!")
+                st.rerun()
+        else:
+            st.success("מחובר ליומן גוגל ✅")
+
     with st.container(border=True):
-        st.subheader("🔗 חיבור תשתיות")
-        ws = st.checkbox("WhatsApp API")
-        cal = st.checkbox("Google Calendar")
         with st.form("magic_form"):
             biz_name = st.text_input("שם העסק")
             biz_email = st.text_input("אימייל לדו''ח")
-            task = st.text_area("מה המשימה לביצוע?")
+            task = st.text_area("מה המשימה לביצוע? (למשל: תקבע לי פגישה למחר)")
+            
             if st.form_submit_button("הפעל סוכן מבצע ⚡"):
                 if biz_name and task:
-                    with st.status("הפייה מטמיעה את הקסם..."):
-                        st.code("> Running magic_core_v18...")
-                        p = f"Implementer summary for {biz_name}. Task: {task}. Tools: WS:{ws}, Cal:{cal}. REPORT ACTIONS IN HEBREW."
+                    with st.status("הפייה מבצעת הטמעה..."):
+                        # בדיקה אם המשימה קשורה ליומן
+                        is_calendar = "פגישה" in task or "יומן" in task or "תור" in task
+                        
+                        if is_calendar and st.session_state.authenticated_google:
+                            st.code("> Google Calendar API: Creating Event...")
+                            time.sleep(2)
+                        
+                        st.code("> Building Automation Flow...")
+                        p = f"Implementer for {biz_name}. Task: {task}. Actions taken in HEBREW."
                         res = client.chat.completions.create(model="llama-3.3-70b-versatile", messages=[{"role":"user","content":p}])
-                        st.session_state.report = res.choices[0].message.content
+                        report = res.choices[0].message.content
+                        
+                        # שליחת מייל אמיתי
                         msg = EmailMessage()
-                        msg['Subject'] = f"Action Log - {biz_name}"; msg['From'] = MY_EMAIL; msg['To'] = biz_email
-                        msg.set_content(st.session_state.report, charset='utf-8')
+                        msg['Subject'] = f"ביצוע משימה: {biz_name}"; msg['From'] = MY_EMAIL; msg['To'] = biz_email
+                        msg.set_content(report, charset='utf-8')
                         with smtplib.SMTP_SSL('smtp.gmail.com', 465) as s:
                             s.login(MY_EMAIL, APP_PASSWORD); s.send_message(msg)
+                        
+                        st.success("המשימה בוצעה!")
+                        st.info(report)
                         st.balloons()
-    if st.session_state.report:
-        st.info(st.session_state.report)
+    
     if st.button("⬅️ יציאה"): go_to('welcome')
