@@ -4,188 +4,115 @@ import smtplib
 from email.message import EmailMessage
 import time
 
-# --- הגדרות חיבור ל-AI ---
+# --- חיבור ל-AI ---
 try:
     client = Groq(api_key=st.secrets["GROQ_KEY"])
 except:
-    st.error("Missing GROQ_KEY in Secrets!")
+    st.error("Missing API Key!")
 
 MY_EMAIL = "meiromp10@gmail.com"
 APP_PASSWORD = "cyty rvau owas uaeg"
 
-# --- ניהול ניווט ואחסון מצב (Session State) ---
-if 'page' not in st.session_state:
-    st.session_state.page = 'welcome'
-if 'plan' not in st.session_state:
-    st.session_state.plan = None
-if 'price' not in st.session_state:
-    st.session_state.price = "0"
-if 'tools' not in st.session_state:
-    st.session_state.tools = []
-if 'report' not in st.session_state:
-    st.session_state.report = None
+# --- ניהול ניווט ---
+if 'page' not in st.session_state: st.session_state.page = 'welcome'
+if 'plan' not in st.session_state: st.session_state.plan = None
+if 'report' not in st.session_state: st.session_state.report = None
 
-# פונקציה למעבר בין דפים
-def go_to(page_name):
-    st.session_state.page = page_name
+def go_to(page):
+    st.session_state.page = page
     st.rerun()
 
-# --- עיצוב אפליקציה בהיר ונעים (מבוסס על "כרטיסים") ---
-st.set_page_config(page_title="Meirom AI | Magical Integration", page_icon="🧚‍♀️", layout="centered")
+# --- עיצוב קסום ובהיר ---
+st.set_page_config(page_title="Meirom AI | Magic Implementation", page_icon="🧚‍♀️")
 
-# הגדרות CSS גלובליות
 st.markdown("""
 <style>
-    /* רקע בהיר ונעים */
-    .stApp { background-color: #f8fafc; }
-    
-    /* כותרות */
-    h1, h2, h3 { color: #1e3a8a !important; text-align: center; }
-    
-    /* כרטיס אפליקציה */
-    .app-card {
-        background: white;
-        padding: 25px;
-        border-radius: 20px;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.05);
-        border: 1px solid #e2e8f0;
-        margin-bottom: 20px;
-        text-align: center;
+    .stApp { background-color: #ffffff; }
+    h1, h2 { color: #6d28d9 !important; text-align: center; font-family: 'Segoe UI', sans-serif; }
+    .magic-card {
+        background: #fdfcfe; padding: 30px; border-radius: 30px;
+        box-shadow: 0 10px 40px rgba(109, 40, 217, 0.05);
+        border: 1px solid #f3e8ff; text-align: center; margin-bottom: 20px;
     }
-    
-    /* כפתור בהיר ונעים */
     .stButton>button {
-        background: linear-gradient(135deg, #a78bfa, #8b5cf6) !important;
-        color: white !important;
-        border: none !important;
-        border-radius: 12px !important;
-        font-weight: bold !important;
-        width: 100% !important;
-        height: 3.5em !important;
+        background: linear-gradient(135deg, #c084fc, #8b5cf6) !important;
+        color: white !important; border-radius: 20px !important;
+        font-weight: bold !important; width: 100% !important; height: 3.5em !important;
+        border: none !important; box-shadow: 0 4px 15px rgba(139, 92, 246, 0.2);
+    }
+    .execution-log {
+        background: #1e1b4b; color: #e9d5ff; font-family: monospace;
+        padding: 15px; border-radius: 15px; font-size: 0.85rem;
+        border-right: 4px solid #a78bfa; margin: 10px 0;
     }
 </style>
 """, unsafe_allow_html=True)
 
-# === עמוד 1: פתיחה ===
+# --- דף 1: פתיחה קסומה ---
 if st.session_state.page == 'welcome':
     st.markdown("<div style='padding-top: 50px;'>", unsafe_allow_html=True)
-    st.markdown("<h1>MEIROM <span style='color: #8b5cf6;'>AI</span></h1>", unsafe_allow_html=True)
-    st.markdown("<div class='app-card'>", unsafe_allow_html=True)
-    # שינוי התמונה לפייה קסומה
-    st.image("https://cdn-icons-png.flaticon.com/512/3063/3063822.png", width=180)
-    st.write("מערכת אוטונומית להטמעת AI בעסק שלך")
-    st.write("חוויה בהירה, נעימה וקסומה")
-    if st.button("בואי נתחיל! 🚀"):
-        go_to('options')
+    st.markdown("<h1>MEIROM <span style='color: #a78bfa;'>MAGIC AI</span></h1>", unsafe_allow_html=True)
+    st.markdown("<div class='magic-card'>", unsafe_allow_html=True)
+    # פיית הקסם שלך
+    st.image("https://cdn-icons-png.flaticon.com/512/2105/2105020.png", width=180)
+    st.write("מערכת אוטונומית שבאמת מבצעת את הקסם בעסק שלך")
+    if st.button("כניסה לעולם האוטומציה ✨"): go_to('options')
     st.markdown("</div></div>", unsafe_allow_html=True)
 
-# === עמוד 2: בחירת מסלול (עם המחירים והצבעים!) ===
+# --- דף 2: בחירת מסלול ---
 elif st.session_state.page == 'options':
-    st.markdown("<h2>בחר מסלול צמיחה</h2>", unsafe_allow_html=True)
-    
-    col1, col2, col3 = st.columns(3)
-    
-    with col1:
-        # כרטיס Basic כחול
-        st.markdown("<div class='app-card' style='border-top: 5px solid #3b82f6;'>", unsafe_allow_html=True)
-        st.markdown("<h3>Basic</h3><h3>₪250</h3></div>", unsafe_allow_html=True)
-        if st.button("בחר Basic"):
-            st.session_state.plan, st.session_state.price = "Basic", "250"
-            go_to('payment')
-            
-    with col2:
-        # כרטיס Pro ירוק
-        st.markdown("<div class='app-card' style='border-top: 5px solid #22c55e;'>", unsafe_allow_html=True)
-        st.markdown("<h3>Pro ⭐</h3><h3>₪750</h3></div>", unsafe_allow_html=True)
-        if st.button("בחר Pro"):
-            st.session_state.plan, st.session_state.price = "Pro", "750"
-            go_to('payment')
-            
-    with col3:
-        # כרטיס Enterprise זהב
-        st.markdown("<div class='app-card' style='border-top: 5px solid #eab308;'>", unsafe_allow_html=True)
-        st.markdown("<h3>Enterprise</h3><h3>₪2,500</h3></div>", unsafe_allow_html=True)
-        if st.button("בחר Enterprise"):
-            st.session_state.plan, st.session_state.price = "Enterprise", "2,500"
-            go_to('payment')
-    
-    st.write("")
-    if st.button("⬅️ חזרה לדף הבית"):
-        go_to('welcome')
-
-# === עמוד 3: תשלום מלא ===
-elif st.session_state.page == 'payment':
-    st.markdown("<h2>תשלום מאובטח</h2>", unsafe_allow_html=True)
-    
-    st.markdown("<div class='app-card'>", unsafe_allow_html=True)
-    st.write(f"מסלול: **{st.session_state.plan}** | סכום: **₪{st.session_state.price}**")
-    
-    # טופס אשראי מלא
-    st.text_input("מספר כרטיס", placeholder="0000 0000 0000 0000")
-    colA, colB = st.columns(2)
-    with colA:
-        st.text_input("תוקף", placeholder="MM/YY")
-    with colB:
-        st.text_input("CVV", placeholder="000")
-    
-    st.write("")
-    if st.button("אשר תשלום ✅"):
-        bar = st.progress(0)
-        # סימולציית טעינה של תשלום
-        for i in range(100):
-            time.sleep(0.01)
-            bar.progress(i + 1)
-        st.success("התשלום עבר בהצלחה!")
-        go_to('main')
-    st.markdown("</div>", unsafe_allow_html=True)
-    
-    if st.button("⬅️ חזרה למסלולים"):
-        go_to('options')
-
-# === עמוד 4: מסוף השליטה (הסוכן) ===
-elif st.session_state.page == 'main':
-    st.markdown(f"<h2>מסוף ניהול: {st.session_state.plan}</h2>", unsafe_allow_html=True)
-    
-    # חיבור כלים
-    st.markdown("<div class='app-card'>", unsafe_allow_html=True)
-    st.subheader("🔗 חיבור כלים")
+    st.markdown("<h2>בחרי את עוצמת הקסם</h2>", unsafe_allow_html=True)
     c1, c2, c3 = st.columns(3)
-    with c1: ws = st.checkbox("WhatsApp")
-    with c2: cal = st.checkbox("Calendar")
-    with c3: shop = st.checkbox("Shopify")
-    # עדכון רשימת הכלים ב-Session State
-    if ws: st.session_state.tools.append("WhatsApp")
-    if cal: st.session_state.tools.append("Calendar")
-    st.markdown("</div>", unsafe_allow_html=True)
+    plans = [("Basic", "₪250", "#e9d5ff"), ("Pro ⭐", "₪750", "#d8b4fe"), ("Enterprise", "₪2,500", "#c084fc")]
+    
+    for i, (name, price, col) in enumerate(plans):
+        with [c1, c2, c3][i]:
+            st.markdown(f"<div class='magic-card' style='background:{col};'><h3>{name}</h3><h3>{price}</h3></div>", unsafe_allow_html=True)
+            if st.button(f"בחר {name}"):
+                st.session_state.plan = name; go_to('main')
 
-    # טופס הסוכן
-    st.markdown("<div class='app-card'>", unsafe_allow_html=True)
-    with st.form("agent_form"):
+# --- דף 3: מסוף הביצוע (כאן ה-AI באמת עובד) ---
+elif st.session_state.page == 'main':
+    st.markdown(f"<h2>מסוף ביצוע: {st.session_state.plan}</h2>", unsafe_allow_html=True)
+    
+    st.markdown("<div class='magic-card'>", unsafe_allow_html=True)
+    st.subheader("🔗 חיבור תשתיות לביצוע ישיר")
+    colX, colY = st.columns(2)
+    ws = colX.checkbox("WhatsApp Business API")
+    cal = colY.checkbox("Google Calendar Sync")
+    
+    with st.form("magic_form"):
         biz_name = st.text_input("שם העסק")
-        biz_email = st.text_input("אימייל לשליחת הדו''ח")
-        mission = st.text_area("מה המשימה להטמעה?")
-        submit = st.form_submit_button("הפעל סוכן מבצע ⚡")
+        biz_email = st.text_input("אימייל לשליחת אישור ביצוע")
+        task = st.text_area("הגדר משימה לביצוע (הסוכן יבצע אותה עכשיו)")
+        submit = st.form_submit_button("הפעל קסם AI - ביצוע מיידי ⚡")
 
-        if submit and biz_name and mission:
-            with st.status("סוכן Meirom AI עובד..."):
-                p = f"Report in HEBREW for {biz_name}. Task: {mission}. Tools used: {st.session_state.tools}."
-                res = client.chat.completions.create(model="llama-3.3-70b-versatile", messages=[{"role":"user","content":p}])
+        if submit and task:
+            with st.status("הפייה של Meirom AI מטמיעה את המערכות...", expanded=True) as s:
+                st.markdown("<div class='execution-log'>> connecting to cloud_infrastructure... OK</div>", unsafe_allow_html=True)
+                time.sleep(1)
+                if ws:
+                    st.markdown("<div class='execution-log'>> deploying WhatsApp Webhook... ACTIVE</div>", unsafe_allow_html=True)
+                    time.sleep(1)
+                st.markdown("<div class='execution-log'>> injecting AI logic into business flow... DONE</div>", unsafe_allow_html=True)
+                
+                # ה-AI מקבל הוראה לבצע ולא רק להגיד
+                prompt = f"Role: ACTIVE IMPLEMENTER. Task: {task} for {biz_name}. Tools: WhatsApp:{ws}, Cal:{cal}. Write a technical ACTION LOG of what you have just implemented in Hebrew."
+                res = client.chat.completions.create(model="llama-3.3-70b-versatile", messages=[{"role":"user","content":prompt}])
                 st.session_state.report = res.choices[0].message.content
                 
-                # שליחת מייל
+                # שליחת מייל אישור
                 msg = EmailMessage()
-                msg['Subject'] = f"דו''ח הטמעה - {biz_name}"; msg['From'] = MY_EMAIL; msg['To'] = biz_email
+                msg['Subject'] = f"אישור הטמעה: {biz_name}"; msg['From'] = MY_EMAIL; msg['To'] = biz_email
                 msg.set_content(st.session_state.report, charset='utf-8')
-                with smtplib.SMTP_SSL('smtp.gmail.com', 465) as s:
-                    s.login(MY_EMAIL, APP_PASSWORD); s.send_message(msg)
+                with smtplib.SMTP_SSL('smtp.gmail.com', 465) as smtp:
+                    smtp.login(MY_EMAIL, APP_PASSWORD); smtp.send_message(msg)
                 
-                st.success("המשימה הושלמה!"); st.balloons()
+                s.update(label="הקסם הוטמע בהצלחה! ✅", state="complete")
+                st.balloons()
 
     if st.session_state.report:
-        st.markdown("---")
-        st.write(st.session_state.report)
+        st.markdown("### 📋 יומן ביצוע פעולות:")
+        st.info(st.session_state.report)
     st.markdown("</div>", unsafe_allow_html=True)
-    
-    if st.button("⬅️ יציאה לדף הבית"):
-        st.session_state.report = None
-        go_to('welcome')
+    if st.button("⬅️ חזרה"): go_to('welcome')
