@@ -2,7 +2,8 @@ import streamlit as st
 from groq import Groq
 import smtplib
 from email.message import EmailMessage
-import urllib.parse # כלי לניקוי כתובות אינטרנט
+import urllib.parse
+import time # הוספת ספרייית זמן
 
 # --- הגדרות אבטחה ---
 GROQ_API_KEY = st.secrets["GROQ_API_KEY"]
@@ -21,7 +22,7 @@ with st.form("super_agent_form"):
 
 if submit:
     if biz_name and problem and target_email:
-        with st.spinner("הסוכן מעצב עבורך את הפתרון..."):
+        with st.spinner("הסוכן מייצר פתרון ומעצב תמונה..."):
             try:
                 # 1. יצירת הטקסט
                 completion = client.chat.completions.create(
@@ -31,32 +32,35 @@ if submit:
                 )
                 ai_response = completion.choices[0].message.content
 
-                # 2. יצירת תמונה (ניקוי הכתובת כדי שתעבוד בטוח!)
+                # 2. יצירת קישור לתמונה וניקוי שלו
+                # הוספנו מילות מפתח באנגלית כדי שהתמונה תצא מקצועית
                 clean_name = urllib.parse.quote(biz_name)
-                image_url = f"https://pollinations.ai/p/professional_marketing_banner_for_{clean_name}_style_modern_clean?width=1080&height=1080&seed=42"
+                image_url = f"https://pollinations.ai/p/professional_business_marketing_for_{clean_name}?width=1080&height=1080&nologo=true&seed={int(time.time())}"
 
-                # 3. שליחת מייל מעוצב ב-HTML (כדי שיראו את התמונה במייל)
+                # המתנה קלה כדי לוודא שהתמונה נוצרה בשרת
+                time.sleep(2)
+
+                # 3. שליחת המייל כ-HTML
                 msg = EmailMessage()
-                msg['Subject'] = f"✅ המשימה הושלמה עבור {biz_name}"
+                msg['Subject'] = f"✅ פתרון ועיצוב עבור {biz_name}"
                 msg['From'] = MY_EMAIL
                 msg['To'] = target_email
                 
-                # יצירת תוכן המייל כ-HTML
+                # עיצוב המייל ב-HTML
                 email_content = f"""
-                <html>
-                <body dir="rtl" style="font-family: Arial, sans-serif;">
-                    <h2>שלום! כאן סוכן ה-AI של מירום.</h2>
-                    <p>ביצעתי את המשימה עבור <strong>{biz_name}</strong>.</p>
-                    <div style="background-color: #f4f4f4; padding: 15px; border-radius: 10px;">
-                        <p>{ai_response}</p>
-                    </div>
-                    <h3>התמונה השיווקית שיצרתי עבורך:</h3>
-                    <img src="{image_url}" alt="Marketing Image" style="width: 100%; max-width: 500px; border-radius: 10px;">
-                    <p><a href="{image_url}">לחץ כאן להורדת התמונה במידה ולא רואים אותה</a></p>
+                <div dir="rtl" style="font-family: sans-serif; border: 1px solid #ddd; padding: 20px; border-radius: 10px;">
+                    <h2 style="color: #2e7d32;">שלום! כאן הסוכן של Meiron AI</h2>
+                    <p>ניתחנו את הבעיה עבור <strong>{biz_name}</strong>:</p>
+                    <p style="background: #f9f9f9; padding: 10px; border-right: 5px solid #2e7d32;">{ai_response}</p>
+                    <hr>
+                    <h3>העיצוב השיווקי שלך מוכן:</h3>
+                    <p>אם התמונה לא מופיעה, לחץ על "הצג תמונות" במייל או בקישור למטה.</p>
+                    <img src="{image_url}" width="500" style="border-radius: 10px; display: block; margin: 0 auto;">
                     <br>
-                    <p>בברכה,<br><strong>Meiron AI Solutions</strong></p>
-                </body>
-                </html>
+                    <div style="text-align: center;">
+                        <a href="{image_url}" style="background: #2e7d32; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">הורד תמונה ברזולוציה גבוהה</a>
+                    </div>
+                </div>
                 """
                 msg.add_header('Content-Type', 'text/html')
                 msg.set_payload(email_content.encode('utf-8'))
@@ -66,9 +70,8 @@ if submit:
                     smtp.send_message(msg)
 
                 # 4. הצגה באתר
-                st.success("המשימה הושלמה!")
-                st.subheader("התמונה שהסוכן יצר:")
-                st.image(image_url) # עכשיו זה יעבוד כי הכתובת נקייה
+                st.success("הסוכן סיים! בדוק את המייל.")
+                st.image(image_url, caption=f"עיצוב עבור {biz_name}")
                 st.info(ai_response)
                 st.balloons()
 
