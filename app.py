@@ -24,91 +24,85 @@ def go_to(page):
     st.session_state.page = page
     st.rerun()
 
-# --- עיצוב מינימליסטי ונקי ---
+# --- עיצוב Premium Minimalist ---
 st.set_page_config(page_title="Meirom AI", page_icon="✨")
 
 st.markdown("""
     <style>
-    .stApp { background-color: #ffffff; color: #1e293b; }
-    h1, h2, h3 { color: #0f172a !important; font-family: sans-serif; }
-    .stButton>button {
-        background-color: #f1f5f9;
-        color: #1e40af !important;
-        border: 1px solid #e2e8f0 !important;
-        border-radius: 8px !important;
+    /* רקע מעוצב ונעים */
+    .stApp {
+        background: linear-gradient(180deg, #fdfbfb 0%, #ebedee 100%);
     }
-    .stButton>button:hover { background-color: #1e40af !important; color: white !important; }
-    .card { padding: 20px; border-radius: 12px; background-color: #f8fafc; border: 1px solid #e2e8f0; text-align: center; margin-bottom: 10px; }
+    
+    /* עיצוב כותרות */
+    h1 {
+        font-family: 'Inter', sans-serif;
+        color: #1e293b !important;
+        font-weight: 800 !important;
+        letter-spacing: -1px;
+    }
+
+    /* כפתור Gradient יוקרתי */
+    .stButton>button {
+        background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
+        color: white !important;
+        border: none !important;
+        border-radius: 12px !important;
+        padding: 12px 24px !important;
+        font-weight: 600 !important;
+        box-shadow: 0 4px 12px rgba(99, 102, 241, 0.2);
+        transition: all 0.3s ease;
+    }
+    .stButton>button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 15px rgba(99, 102, 241, 0.4);
+    }
+
+    /* כרטיסים מעוצבים (Cards) */
+    .card-style {
+        background: white;
+        padding: 25px;
+        border-radius: 20px;
+        box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+        border: 1px solid #f1f5f9;
+        text-align: center;
+        margin-bottom: 20px;
+    }
+
+    /* עיצוב תיבות טקסט */
+    .stTextInput input, .stTextArea textarea {
+        border-radius: 12px !important;
+        border: 1px solid #e2e8f0 !important;
+        background-color: white !important;
+        padding: 12px !important;
+    }
     </style>
     """, unsafe_allow_html=True)
 
-# --- דפים ---
+# --- עמוד 1: Welcome ---
 if st.session_state.page == 'welcome':
-    st.markdown("<div style='text-align: center; padding-top: 50px;'>", unsafe_allow_html=True)
-    st.markdown("<h1>Meirom <span style='color: #1e40af;'>AI</span></h1>", unsafe_allow_html=True)
-    st.markdown("<p>פתרונות אוטונומיים לעסק שלך</p>", unsafe_allow_html=True)
-    if st.button("התחל עכשיו", use_container_width=True): go_to('options')
+    st.markdown("<div style='text-align: center; padding-top: 60px;'>", unsafe_allow_html=True)
+    st.markdown("<h1>MEIROM <span style='color: #6366f1;'>AI</span></h1>", unsafe_allow_html=True)
+    st.markdown("<p style='color: #64748b; font-size: 1.2rem; margin-bottom: 40px;'>Empowering business through autonomous intelligence.</p>", unsafe_allow_html=True)
+    
+    col1, col2, col3 = st.columns([1,1.5,1])
+    with col2:
+        st.image("https://cdn-icons-png.flaticon.com/512/2103/2103633.png", width=250)
+        st.write("")
+        if st.button("Get Started ✨", use_container_width=True):
+            go_to('options')
     st.markdown("</div>", unsafe_allow_html=True)
 
+# --- עמוד 2: Options ---
 elif st.session_state.page == 'options':
-    st.markdown("<h2 style='text-align: center;'>בחירת מסלול</h2>", unsafe_allow_html=True)
+    st.markdown("<h2 style='text-align: center; margin-bottom: 30px;'>Select Your Plan</h2>", unsafe_allow_html=True)
     c1, c2, c3 = st.columns(3)
+    
     with c1:
-        st.markdown("<div class='card'><h3>Basic</h3></div>", unsafe_allow_html=True)
-        if st.button("בחר Basic"): st.session_state.plan = "Basic"; go_to('payment')
+        st.markdown("<div class='card-style'><h3>Basic</h3><p style='color:#6366f1; font-weight:bold;'>₪250</p></div>", unsafe_allow_html=True)
+        if st.button("Choose Basic"): st.session_state.plan = "Basic"; go_to('payment')
     with c2:
-        st.markdown("<div class='card'><h3>Pro</h3></div>", unsafe_allow_html=True)
-        if st.button("בחר Pro"): st.session_state.plan = "Pro"; go_to('payment')
+        st.markdown("<div class='card-style' style='border: 2px solid #6366f1;'><h3>Pro</h3><p style='color:#6366f1; font-weight:bold;'>₪750</p></div>", unsafe_allow_html=True)
+        if st.button("Choose Pro"): st.session_state.plan = "Pro"; go_to('payment')
     with c3:
-        st.markdown("<div class='card'><h3>Enterprise</h3></div>", unsafe_allow_html=True)
-        if st.button("בחר Enterprise"): st.session_state.plan = "Enterprise"; go_to('payment')
-
-elif st.session_state.page == 'payment':
-    st.markdown("<h2 style='text-align: center;'>תשלום מאובטח</h2>", unsafe_allow_html=True)
-    st.text_input("מספר כרטיס", placeholder="xxxx-xxxx-xxxx-xxxx")
-    if st.button("אישור והמשך ✅", use_container_width=True): go_to('main')
-
-elif st.session_state.page == 'main':
-    st.title("מרכז שליטה והטמעה")
-    
-    st.markdown("### 🔗 חיבור סוכנים")
-    colA, colB, colC = st.columns(3)
-    with colA: 
-        if st.checkbox("WhatsApp"): st.session_state.integrations.append("WhatsApp")
-    with colB: 
-        if st.checkbox("Google Calendar"): st.session_state.integrations.append("Calendar")
-    with colC: 
-        if st.checkbox("E-commerce"): st.session_state.integrations.append("Shopify")
-    
-    with st.form("action_form"):
-        biz_name = st.text_input("שם העסק")
-        biz_email = st.text_input("מייל מנהל")
-        mission = st.text_area("משימה להטמעה")
-        submit = st.form_submit_button("הפעל סוכן ⚡")
-
-    if submit and biz_name and mission:
-        with st.status("מעבד נתונים...", expanded=True):
-            prompt = f"Professional report in HEBREW for {biz_name}. Mission: {mission}. Connect: {st.session_state.integrations}."
-            response = client.chat.completions.create(
-                model="llama-3.3-70b-versatile",
-                messages=[{"role": "user", "content": prompt}]
-            )
-            st.session_state.report = response.choices[0].message.content
-            
-            msg = EmailMessage()
-            msg['Subject'] = f"דו''ח Meirom AI - {biz_name}"
-            msg['From'] = MY_EMAIL
-            msg['To'] = biz_email
-            msg.set_content(st.session_state.report, charset='utf-8')
-            with smtplib.SMTP_SSL('smtp.gmail.com', 465) as smtp:
-                smtp.login(MY_EMAIL, APP_PASSWORD)
-                smtp.send_message(msg)
-            st.balloons()
-
-    if st.session_state.report:
-        st.markdown("### 📋 סיכום פעולה")
-        st.write(st.session_state.report)
-
-    if st.button("חזרה למסך הבית"):
-        st.session_state.report = None
-        go_to('welcome')
+        st.markdown("<div class='card-style'><h3>Enterprise</h3>
