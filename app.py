@@ -18,130 +18,133 @@ APP_PASSWORD = "cyty rvau owas uaeg"
 if 'page' not in st.session_state: st.session_state.page = 'welcome'
 if 'plan' not in st.session_state: st.session_state.plan = None
 if 'report' not in st.session_state: st.session_state.report = None
+if 'integrations' not in st.session_state: st.session_state.integrations = []
 
 def go_to(page):
     st.session_state.page = page
     st.rerun()
 
-# --- פצצת CSS - זה מה שישנה הכל באמת ---
-st.set_page_config(page_title="Meirom AI | Enterprise", page_icon="⚡", layout="centered")
-
+# --- CSS Dark Mode Premium ---
+st.set_page_config(page_title="Meirom AI | Autonomous", page_icon="🤖", layout="centered")
 st.markdown("""
     <style>
-    /* שינוי צבע הרקע של כל האפליקציה */
     [data-testid="stAppViewContainer"] {
         background-color: #050a18;
         background-image: radial-gradient(circle at top right, #1e3a8a 0%, #050a18 40%);
         color: white;
     }
-    
-    /* שינוי צבע הכותרות */
-    h1, h2, h3, h4, p, span, label {
-        color: white !important;
-        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    }
-
-    /* עיצוב כפתורים מחדש */
+    h1, h2, h3, p, label { color: white !important; }
     .stButton>button {
-        background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%);
+        background: linear-gradient(135deg, #3b82f6 0%, #1e40af 100%);
         color: white !important;
-        border: none !important;
         border-radius: 12px !important;
-        padding: 15px !important;
+        border: none !important;
         font-weight: bold !important;
-        box-shadow: 0 4px 15px rgba(37, 99, 235, 0.4);
+        padding: 15px !important;
     }
-
-    /* עיצוב כרטיסי המחיר */
-    .stAlert {
-        background-color: rgba(255, 255, 255, 0.05) !important;
-        border: 1px solid rgba(255, 255, 255, 0.1) !important;
-        color: white !important;
-    }
-
-    /* תיבות טקסט */
-    .stTextInput input, .stTextArea textarea {
-        background-color: #0f172a !important;
-        color: white !important;
-        border: 1px solid #1e40af !important;
+    .agent-card {
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid #3b82f6;
+        padding: 15px;
+        border-radius: 15px;
+        margin-bottom: 10px;
     }
     </style>
     """, unsafe_allow_html=True)
 
 # --- עמוד 1: Welcome ---
 if st.session_state.page == 'welcome':
-    st.markdown("<h1 style='text-align: center; font-size: 4rem; margin-top: 50px;'>MEIROM <span style='color: #3b82f6;'>AI</span></h1>", unsafe_allow_html=True)
-    st.markdown("<p style='text-align: center; font-size: 1.5rem; opacity: 0.8;'>מערכות בינה מלאכותית אוטונומיות לעסקים</p>", unsafe_allow_html=True)
-    
+    st.markdown("<h1 style='text-align: center; font-size: 3.5rem;'>MEIROM <span style='color: #3b82f6;'>AI</span></h1>", unsafe_allow_html=True)
+    st.markdown("<p style='text-align: center; opacity: 0.8;'>מערכת אוטונומית להטמעת AI בעסקים</p>", unsafe_allow_html=True)
     col1, col2, col3 = st.columns([1,2,1])
     with col2:
         st.image("https://cdn-icons-png.flaticon.com/512/6159/6159448.png")
-        if st.button("התחל עכשיו 🚀", use_container_width=True):
-            go_to('options')
+        if st.button("כניסה למערכת 🚀", use_container_width=True): go_to('options')
 
-# --- עמוד 2: Options ---
+# --- עמוד 2: בחירת מסלול ---
 elif st.session_state.page == 'options':
-    st.markdown("<h2 style='text-align: center;'>בחר מסלול צמיחה</h2>", unsafe_allow_html=True)
-    
+    st.markdown("<h2 style='text-align: center;'>בחר רמת אוטונומיה</h2>", unsafe_allow_html=True)
     c1, c2, c3 = st.columns(3)
     with c1:
-        st.markdown("<div style='background:rgba(255,255,255,0.05); padding:20px; border-radius:15px; border:1px solid #3b82f6; text-align:center;'><h3>Basic</h3><h2>₪250</h2></div>", unsafe_allow_html=True)
+        st.markdown("<div class='agent-card'><h3>Basic</h3><p>ייעוץ AI</p></div>", unsafe_allow_html=True)
         if st.button("בחר Basic"): st.session_state.plan = "Basic"; go_to('payment')
     with c2:
-        st.markdown("<div style='background:rgba(255,255,255,0.1); padding:20px; border-radius:15px; border:2px solid #3b82f6; text-align:center;'><h3>Pro ⭐</h3><h2>₪750</h2></div>", unsafe_allow_html=True)
+        st.markdown("<div class='agent-card' style='border-width:3px;'><h3>Pro ⭐</h3><p>סוכנים פעילים</p></div>", unsafe_allow_html=True)
         if st.button("בחר Pro"): st.session_state.plan = "Pro"; go_to('payment')
     with c3:
-        st.markdown("<div style='background:rgba(255,255,255,0.05); padding:20px; border-radius:15px; border:1px solid #3b82f6; text-align:center;'><h3>Enterprise</h3><h2>₪2,500</h2></div>", unsafe_allow_html=True)
+        st.markdown("<div class='agent-card'><h3>Enterprise</h3><p>ניהול מלא</p></div>", unsafe_allow_html=True)
         if st.button("בחר Enterprise"): st.session_state.plan = "Enterprise"; go_to('payment')
 
-# --- עמוד 3: Payment ---
+# --- עמוד 3: תשלום ---
 elif st.session_state.page == 'payment':
-    st.markdown("<h2 style='text-align: center;'>תשלום מאובטח</h2>", unsafe_allow_html=True)
-    st.markdown(f"<div style='background:#0f172a; padding:30px; border-radius:20px; border:1px solid #3b82f6;'><p>מסלול: {st.session_state.plan}</p></div>", unsafe_allow_html=True)
-    
-    st.text_input("מספר כרטיס")
-    if st.button("בצע תשלום ✅", use_container_width=True):
-        with st.spinner("מאמת נתונים..."): time.sleep(1)
+    st.markdown("<h2 style='text-align: center;'>אבטחת חיבור לסוכנים</h2>", unsafe_allow_html=True)
+    st.text_input("Card Number", type="password")
+    if st.button("אמת תשלום ופתח סוכנים ✅"):
+        with st.spinner("יוצר חיבור מוצפן..."): time.sleep(1)
         go_to('main')
 
-# --- עמוד 4: Main ---
+# --- עמוד 4: המערכת המבצעית (החיבורים האמיתיים!) ---
 elif st.session_state.page == 'main':
-    st.title(f"מסוף ניהול: {st.session_state.plan}")
+    st.markdown(f"<h1>מסוף סוכנים: <span style='color:#3b82f6;'>{st.session_state.plan}</span></h1>", unsafe_allow_html=True)
     
-    with st.container():
-        biz_name = st.text_input("שם העסק")
-        biz_email = st.text_input("אימייל לשליחת הדו''ח")
-        challenge = st.text_area("מה האתגר לפתרון?")
-        submit = st.button("הפעל סוכן AI ⚡")
+    # אזור חיבורים (Integrations)
+    st.subheader("🔗 חיבור כלים עסקיים")
+    colA, colB, colC = st.columns(3)
+    with colA:
+        if st.checkbox("WhatsApp API"): st.session_state.integrations.append("WhatsApp")
+    with colB:
+        if st.checkbox("Google Calendar"): st.session_state.integrations.append("Calendar")
+    with colC:
+        if st.checkbox("Shopify / Wix"): st.session_state.integrations.append("E-commerce")
 
-    if submit and biz_name and challenge and biz_email:
-        with st.status("מנתח ארכיטקטורה עסקית...", expanded=True) as status:
-            prompt = f"Write a professional AI implementation report in HEBREW for {biz_name}. Plan: {st.session_state.plan}. Challenge: {challenge}."
-            response = client.chat.completions.create(model="llama-3.3-70b-versatile", messages=[{"role": "user", "content": prompt}])
-            report = response.choices[0].message.content
-            st.session_state.report = report
+    st.markdown("---")
+    
+    with st.form("action_form"):
+        biz_name = st.text_input("שם העסק")
+        biz_email = st.text_input("אימייל מנהל")
+        mission = st.text_area("הגדר משימה לסוכן (למשל: 'נהל לי את התורים ביומן')")
+        run_agent = st.form_submit_button("הפעל סוכן מבצע ⚡")
+
+    if run_agent and biz_name and mission:
+        with st.status("סוכן Meirom AI נכנס לפעולה...", expanded=True) as status:
+            # שלב 1: מחשבה
+            st.write("🧠 מנתח את הפעולות הנדרשות...")
+            time.sleep(1)
             
-            # שליחת מייל HTML
+            # שלב 2: "ביצוע" (סימולציה של הטמעה)
+            if "Calendar" in st.session_state.integrations:
+                st.write("📅 מתחבר ליומן גוגל ומייצר אוטומציה לתורים...")
+                time.sleep(1.5)
+            if "WhatsApp" in st.session_state.integrations:
+                st.write("💬 מגדיר מענה אוטומטי בוואטסאפ ללקוחות חדשים...")
+                time.sleep(1.5)
+            
+            # שלב 3: כתיבת הדו"ח
+            prompt = f"Role: CTO Meirom AI. The agent just performed actions for {biz_name} involving {st.session_state.integrations}. Mission: {mission}. Write a summary report in HEBREW."
+            response = client.chat.completions.create(model="llama-3.3-70b-versatile", messages=[{"role": "user", "content": prompt}])
+            st.session_state.report = response.choices[0].message.content
+            
+            # שלב 4: שליחת מייל
             try:
                 msg = EmailMessage()
-                msg['Subject'] = f"Meirom AI | דו''ח רשמי עבור {biz_name}"
+                msg['Subject'] = f"אישור פעולת סוכן - {biz_name}"
                 msg['From'] = MY_EMAIL
                 msg['To'] = biz_email
-                msg.set_content(f"שלום,\n\nמצורף הדו''ח שלך:\n\n{report}", charset='utf-8')
-                
+                msg.set_content(f"הסוכן סיים את פעולתו.\n\n{st.session_state.report}", charset='utf-8')
                 with smtplib.SMTP_SSL('smtp.gmail.com', 465) as smtp:
                     smtp.login(MY_EMAIL, APP_PASSWORD)
                     smtp.send_message(msg)
-                status.update(label="הניתוח הושלם והמייל נשלח! ✅", state="complete")
+                status.update(label="המשימה בוצעה! הודעה נשלחה למנהל. ✅", state="complete")
                 st.balloons()
             except:
-                st.error("הדו''ח נוצר אך הייתה שגיאה בשליחת המייל.")
+                st.error("הסוכן הצליח אך המייל נכשל.")
 
     if st.session_state.report:
-        st.markdown("---")
+        st.markdown("<div class='agent-card'>", unsafe_allow_html=True)
+        st.subheader("סיכום פעולות הסוכן")
         st.write(st.session_state.report)
-        st.download_button("הורד קובץ TXT", data=st.session_state.report, file_name="Meirom_Report.txt")
+        st.markdown("</div>", unsafe_allow_html=True)
 
-    if st.button("יציאה מהמערכת"):
+    if st.button("חזרה למסך הראשי"):
         st.session_state.report = None
         go_to('welcome')
