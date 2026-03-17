@@ -7,8 +7,8 @@ import time
 # --- חיבור ל-AI ---
 try:
     client = Groq(api_key=st.secrets["GROQ_KEY"])
-except Exception as e:
-    st.error("Missing GROQ_KEY in Secrets!")
+except:
+    st.error("Missing GROQ_KEY!")
 
 MY_EMAIL = "meiromp10@gmail.com"
 APP_PASSWORD = "cyty rvau owas uaeg"
@@ -28,7 +28,7 @@ def go_to(page_name):
     st.rerun()
 
 # --- עיצוב האפליקציה ---
-st.set_page_config(page_title="Meirom AI", page_icon="⚡", layout="centered")
+st.set_page_config(page_title="Meirom AI", page_icon="⚡")
 
 st.markdown("""
 <style>
@@ -43,49 +43,54 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# --- דף פתיחה ---
+# --- דפים ---
 if st.session_state.page == 'welcome':
-    st.markdown("<div style='padding-top: 50px;'>", unsafe_allow_html=True)
-    st.markdown("<h1>MEIROM <span style='color: #2563eb;'>AI</span></h1>", unsafe_allow_html=True)
+    st.markdown("<h1 style='padding-top:50px;'>MEIROM AI</h1>", unsafe_allow_html=True)
     st.markdown('<div class="app-card">', unsafe_allow_html=True)
-    st.image("https://cdn-icons-png.flaticon.com/512/6159/6159448.png", width=180)
-    if st.button("כניסה למערכת 🚀"): 
+    st.image("https://cdn-icons-png.flaticon.com/512/6159/6159448.png", width=150)
+    if st.button("כניסה 🚀"):
         go_to('options')
-    st.markdown("</div></div>", unsafe_allow_html=True)
+    st.markdown("</div>", unsafe_allow_html=True)
 
-# --- בחירת מסלול ---
 elif st.session_state.page == 'options':
-    st.markdown("<h2>בחר מסלול צמיחה</h2>", unsafe_allow_html=True)
+    st.markdown("<h2>בחר מסלול</h2>", unsafe_allow_html=True)
     c1, c2, c3 = st.columns(3)
-    
     with c1:
-        st.markdown('<div class="app-card" style="border-top:5px solid #3b82f6;">', unsafe_allow_html=True)
-        st.markdown("<h3>Basic</h3><p>₪250</p></div>", unsafe_allow_html=True)
+        st.markdown('<div class="app-card" style="border-top:5px solid #3b82f6;"><h3>Basic</h3></div>', unsafe_allow_html=True)
         if st.button("בחר Basic"):
             st.session_state.plan, st.session_state.price = "Basic", "250"
             go_to('payment')
-            
     with c2:
-        st.markdown('<div class="app-card" style="border-top:5px solid #22c55e;">', unsafe_allow_html=True)
-        st.markdown("<h3>Pro ⭐</h3><p>₪750</p></div>", unsafe_allow_html=True)
+        st.markdown('<div class="app-card" style="border-top:5px solid #22c55e;"><h3>Pro ⭐</h3></div>', unsafe_allow_html=True)
         if st.button("בחר Pro"):
             st.session_state.plan, st.session_state.price = "Pro", "750"
             go_to('payment')
-            
     with c3:
-        st.markdown('<div class="app-card" style="border-top:5px solid #eab308;">', unsafe_allow_html=True)
-        st.markdown("<h3>Enterprise</h3><p>₪2,500</p></div>", unsafe_allow_html=True)
+        st.markdown('<div class="app-card" style="border-top:5px solid #eab308;"><h3>Enterprise</h3></div>', unsafe_allow_html=True)
         if st.button("בחר Enterprise"):
             st.session_state.plan, st.session_state.price = "Enterprise", "2,500"
             go_to('payment')
-            
-    if st.button("⬅️ חזרה"): 
-        go_to('welcome')
 
-# --- דף תשלום ---
 elif st.session_state.page == 'payment':
-    st.markdown("<h2>תשלום מאובטח</h2>", unsafe_allow_html=True)
+    st.markdown("<h2>תשלום</h2>", unsafe_allow_html=True)
     st.markdown('<div class="app-card">', unsafe_allow_html=True)
-    st.write(f"מסלול: **{st.session_state.plan}** | סכום: **₪{st.session_state.price}**")
-    
-    st.text_input("מספר כרטיס", placeholder="0000
+    st.write(f"מסלול: {st.session_state.plan}")
+    st.text_input("מספר כרטיס")
+    if st.button("אשר תשלום ✅"):
+        bar = st.progress(0)
+        for i in range(100):
+            time.sleep(0.01)
+            bar.progress(i + 1)
+        go_to('main')
+    st.markdown("</div>", unsafe_allow_html=True)
+
+elif st.session_state.page == 'main':
+    st.markdown(f"<h2>מסוף: {st.session_state.plan}</h2>", unsafe_allow_html=True)
+    st.markdown('<div class="app-card">', unsafe_allow_html=True)
+    with st.form("agent_form"):
+        name = st.text_input("שם העסק")
+        email = st.text_input("מייל לדו''ח")
+        mission = st.text_area("משימה להטמעה")
+        if st.form_submit_button("הפעל סוכן ⚡"):
+            if name and mission:
+                with st.status("
