@@ -105,4 +105,31 @@ elif st.session_state.page == 'main':
         if biz_name and challenge and biz_email:
             with st.spinner("ה-AI של Meirom Solutions מבצע הטמעה..."):
                 try:
-                    prompt = f"Role: CTO of Meirom AI Solutions. Plan: {st.session_state.plan}. Business: {biz_name}. Goal:
+                    # כאן התיקון - המרכאות נסגרות בסוף המשפט
+                    prompt = f"Role: CTO of Meirom AI Solutions. Plan: {st.session_state.plan}. Business: {biz_name}. Goal: Implement AI solutions for: {challenge}. Send a monthly implementation report in Hebrew."
+                    
+                    response = client.chat.completions.create(
+                        model="llama-3.3-70b-versatile",
+                        messages=[{"role": "user", "content": prompt}],
+                        temperature=0.4
+                    )
+                    report = response.choices[0].message.content
+                    
+                    msg = EmailMessage()
+                    msg.set_content(f"שלום!\nהוטמעה מערכת {st.session_state.plan} עבור {biz_name}.\n\nדו''ח עבודה חודשי:\n{report}", charset='utf-8')
+                    msg['Subject'] = f"אישור הטמעה - Meirom AI"
+                    msg['From'] = MY_EMAIL
+                    msg['To'] = biz_email
+                    
+                    with smtplib.SMTP_SSL('smtp.gmail.com', 465) as smtp:
+                        smtp.login(MY_EMAIL, APP_PASSWORD)
+                        smtp.send_message(msg)
+                        
+                    st.success("ההטמעה הושלמה! המייל נשלח ללקוח.")
+                    st.balloons()
+                    st.markdown(report)
+                except Exception as e:
+                    st.error(f"שגיאה: {e}")
+                    
+    if st.button("⬅️ חזרה לתשלום (ביטול)"):
+        go_to('payment')
