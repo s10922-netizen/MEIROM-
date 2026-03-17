@@ -33,7 +33,6 @@ st.markdown("""
         background: linear-gradient(90deg, #a78bfa, #7c3aed); color: white;
         border-radius: 15px; font-weight: bold; border: none; height: 3.5em; width: 100%;
     }
-    /* עיצוב כפתור היומן המיוחד */
     .cal-button {
         display: inline-block; padding: 15px 25px; background-color: #7c3aed;
         color: white !important; text-decoration: none !important; border-radius: 15px;
@@ -49,13 +48,14 @@ if st.session_state.page == 'welcome':
     st.image("fairy_logo.png", width=350)
     with st.container(border=True):
         st.subheader("ברוכה הבאה לעולם האוטומציות הקסום")
-        if st.button("בואי נתחיל! ✨"): go_to('options')
+        if st.button("בואי נתחיל!"):
+            go_to('options')
 
 # --- דף 2: בחירת מסלול ---
 elif st.session_state.page == 'options':
-    st.header("בחרי את חבילת ההטמעה")
+    st.header("בחרי חבילת הטמעה")
     c1, c2, c3 = st.columns(3)
-    plans = [("Basic", "₪250"), ("Pro ⭐", "₪750"), ("Enterprise", "₪2,500")]
+    plans = [("Basic", "₪250"), ("Pro", "₪750"), ("Enterprise", "₪2,500")]
     for i, (p_name, p_price) in enumerate(plans):
         with [c1, c2, c3][i]:
             with st.container(border=True):
@@ -66,26 +66,27 @@ elif st.session_state.page == 'options':
 
 # --- דף 3: תשלום אשראי ---
 elif st.session_state.page == 'payment':
-    st.header("💳 סליקה מאובטחת")
+    st.header("סליקה מאובטחת")
     with st.container(border=True):
         st.write(f"מסלול: {st.session_state.plan} | סכום: {st.session_state.price}")
         st.text_input("מספר כרטיס אשראי", placeholder="0000 0000 0000 0000")
-        if st.button("אשר תשלום והמשך ✅"):
-            with st.spinner("מאמת..."): time.sleep(1)
+        if st.button("אשר תשלום והמשך"):
+            with st.spinner("מאמת..."):
+                time.sleep(1)
             go_to('main')
-    if st.button("⬅️ חזור"): go_to('options')
+    if st.button("חזור"):
+        go_to('options')
 
 # --- דף 4: מסוף הביצוע ---
 elif st.session_state.page == 'main':
     st.header(f"מסוף ניהול: {st.session_state.plan}")
     with st.sidebar:
         st.image("fairy_logo.png", width=100)
-        st.subheader("הגדרות סוכן")
+        st.subheader("הגדרות")
         g_on = st.toggle("סנכרון יומן", value=True)
         w_on = st.toggle("הודעת WhatsApp")
 
     with st.form("magic_form"):
         biz_name = st.text_input("שם העסק")
         biz_email = st.text_input("אימייל לדו''ח")
-        task = st.text_area("משימה (למשל: תקבע פגישה למחר ב-10:00)")
-        if st.form_submit_button("
+        task = st.text_area("
