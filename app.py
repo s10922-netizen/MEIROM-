@@ -43,7 +43,7 @@ if st.session_state.page == 'welcome':
     
     # שימוש באייקון פייה איכותי ויציב
     st.markdown("<div style='text-align: center;'>", unsafe_allow_html=True)
-    st.image("https://cdn-icons-png.flaticon.com/512/2105/2105020.png", width=200)
+    st.image("fairy_logo.png", caption="מפל הקסם של Meirom AI", width=400)
     st.markdown("</div>", unsafe_allow_html=True)
     
     with st.container(border=True):
