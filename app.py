@@ -7,20 +7,24 @@ import time
 # --- חיבור ל-AI ---
 try:
     client = Groq(api_key=st.secrets["GROQ_KEY"])
-except:
+except Exception as e:
     st.error("Missing GROQ_KEY in Secrets!")
 
 MY_EMAIL = "meiromp10@gmail.com"
 APP_PASSWORD = "cyty rvau owas uaeg"
 
 # --- ניהול ניווט ---
-if 'page' not in st.session_state: st.session_state.page = 'welcome'
-if 'plan' not in st.session_state: st.session_state.plan = None
-if 'price' not in st.session_state: st.session_state.price = "0"
-if 'report' not in st.session_state: st.session_state.report = None
+if 'page' not in st.session_state:
+    st.session_state.page = 'welcome'
+if 'plan' not in st.session_state:
+    st.session_state.plan = None
+if 'price' not in st.session_state:
+    st.session_state.price = "0"
+if 'report' not in st.session_state:
+    st.session_state.report = None
 
-def go_to(page):
-    st.session_state.page = page
+def go_to(page_name):
+    st.session_state.page = page_name
     st.rerun()
 
 # --- עיצוב האפליקציה ---
@@ -29,7 +33,7 @@ st.set_page_config(page_title="Meirom AI", page_icon="⚡", layout="centered")
 st.markdown("""
 <style>
     .stApp { background-color: #f8fafc; }
-    h1, h2, h3 { color: #1e3a8a !important; text-align: center; }
+    h1, h2, h3 { color: #1e3a8a !important; text-align: center; font-family: sans-serif; }
     .app-card {
         background: white; padding: 25px; border-radius: 20px;
         box-shadow: 0 4px 20px rgba(0,0,0,0.05); border: 1px solid #e2e8f0;
@@ -64,15 +68,4 @@ elif st.session_state.page == 'options':
             st.session_state.plan, st.session_state.price = "Pro", "750"
             go_to('payment')
     with c3:
-        st.markdown('<div class="app-card" style="border-top:5px solid #eab308;"><h3>Enterprise</h3><p>₪2,500</p></div>', unsafe_allow_html=True)
-        if st.button("בחר Enterprise"):
-            st.session_state.plan, st.session_state.price = "Enterprise", "2,500"
-            go_to('payment')
-    if st.button("⬅️ חזרה"): 
-        go_to('welcome')
-
-# --- דף תשלום ---
-elif st.session_state.page == 'payment':
-    st.markdown("<h2>תשלום מאובטח</h2>", unsafe_allow_html=True)
-    st.markdown('<div class="app-card">', unsafe_allow_html=True)
-    st.write(f"מסלול: **{st.session_state.plan}** | סכום: **₪{st.
+        st.markdown('<div class="app-card" style="border-top:5px solid #eab308;"><h3>Enterprise</h3><p>₪2,500</p></div>', unsafe_allow_html=True
