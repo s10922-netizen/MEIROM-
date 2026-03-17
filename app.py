@@ -4,7 +4,6 @@ import smtplib
 from email.message import EmailMessage
 
 # --- הגדרות אבטחה וחיבור ---
-# המפתח נמשך מהכספת הסודית ב-Streamlit Cloud
 GROQ_API_KEY = st.secrets["GROQ_KEY"]
 MY_EMAIL = "meiromp10@gmail.com"
 APP_PASSWORD = "cyty rvau owas uaeg"
@@ -12,15 +11,14 @@ APP_PASSWORD = "cyty rvau owas uaeg"
 client = Groq(api_key=GROQ_API_KEY)
 
 # --- עיצוב ממשק המערכת ---
-st.set_page_config(page_title="Meiron AI | Enterprise System", page_icon="🏢", layout="wide")
+st.set_page_config(page_title="Meirom AI | Enterprise System", page_icon="🏢", layout="wide")
 
-# עיצוב כותרת מרשימה
 st.markdown("""
     <style>
     .main-title { font-size: 50px; font-weight: bold; color: #1E3A8A; text-align: center; }
     .sub-title { font-size: 20px; color: #4B5563; text-align: center; margin-bottom: 30px; }
     </style>
-    <div class="main-title">🏢 Meiron AI Solutions</div>
+    <div class="main-title">🏢 Meirom AI Solutions</div>
     <div class="sub-title">מערכת אוטונומית להטמעה וניהול בינה מלאכותית בעסקים</div>
     """, unsafe_allow_html=True)
 
@@ -54,9 +52,8 @@ if submit_btn:
     if biz_name and challenge and biz_email:
         with st.spinner(f"ה-AI מבצע הטמעה במסלול {subscription_plan}..."):
             try:
-                # פרומפט (הוראות) שמגדיר את המערכת כמתקינה ולא רק מייעצת
                 system_prompt = f"""
-                אתה ה-CTO של Meiron AI Solutions. 
+                אתה ה-CTO של Meirom AI Solutions. 
                 הלקוח נרשם למסלול: {subscription_plan}.
                 עליך לייצר מסמך 'אישור הטמעה' עבור {biz_name} בתחום {biz_sector}.
                 
@@ -68,7 +65,6 @@ if submit_btn:
                 כתוב בעברית עסקית, בטוחה בעצמה וטכנולוגית.
                 """
                 
-                # קריאה למודל הכי חדש (3.3)
                 response = client.chat.completions.create(
                     model="llama-3.3-70b-versatile",
                     messages=[{"role": "user", "content": system_prompt}],
@@ -81,7 +77,7 @@ if submit_btn:
                 msg = EmailMessage()
                 msg.set_content(f"""
 שלום רב,
-כאן המערכת האוטונומית של Meiron AI Solutions.
+כאן המערכת האוטונומית של Meirom AI Solutions.
 
 השלמנו את הגדרת התשתית הראשונית עבור {biz_name}.
 סוג המנוי הפעיל: {subscription_plan}
@@ -95,19 +91,17 @@ if submit_btn:
 העדכון הבא יישלח אליך בעוד שבוע בדיוק.
 
 בברכה,
-Meiron AI System
+Meirom AI System
 """, charset='utf-8')
 
                 msg['Subject'] = f"אישור הטמעה ותוכנית עבודה חודשית - {biz_name}"
                 msg['From'] = MY_EMAIL
                 msg['To'] = biz_email
 
-                # חיבור לשרת גוגל ושליחה
                 with smtplib.SMTP_SSL('smtp.gmail.com', 465) as smtp:
                     smtp.login(MY_EMAIL, APP_PASSWORD)
                     smtp.send_message(msg)
                 
-                # תצוגה באתר
                 st.success(f"✅ ההטמעה הושלמה! המייל נשלח לכתובת {biz_email}")
                 st.balloons()
                 
@@ -119,6 +113,5 @@ Meiron AI System
     else:
         st.warning("בבקשה מלאי את כל השדות כדי שנוכל להתחיל בהטמעה.")
 
-# --- הערה לסיום למצגת ---
 st.write("---")
-st.caption("Meiron AI Solutions © 2026 | Powered by Groq & Llama 3.3")
+st.caption("Meirom AI Solutions © 2026 | Powered by Groq & Llama 3.3")
