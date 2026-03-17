@@ -3,77 +3,57 @@ from groq import Groq
 import smtplib
 from email.message import EmailMessage
 import urllib.parse
-import time # הוספת ספרייית זמן
 
-# --- הגדרות אבטחה ---
-GROQ_API_KEY = st.secrets["GROQ_API_KEY"]
+# --- הגדרות ---
+GROQ_API_KEY = "תדביקי_פה_מפתח_חדש_מ_GROQ"
 MY_EMAIL = "meiromp10@gmail.com"
 APP_PASSWORD = "cyty rvau owas uaeg"
+
 client = Groq(api_key=GROQ_API_KEY)
 
-st.set_page_config(page_title="Meiron AI - Super Agent", page_icon="🤖")
-st.title("🤖 Meiron AI - Super Agent")
+st.set_page_config(page_title="Meiron AI Solutions", page_icon="🚀")
+st.title("🚀 Meiron AI Solutions")
 
-with st.form("super_agent_form"):
+with st.form("main_form"):
     biz_name = st.text_input("שם העסק")
     problem = st.text_area("מה הבעיה?")
     target_email = st.text_input("מייל למשלוח")
-    submit = st.form_submit_button("הפעל סוכן ביצוע")
+    submit = st.form_submit_button("צור פתרון מנצח")
 
 if submit:
     if biz_name and problem and target_email:
-        with st.spinner("הסוכן מייצר פתרון ומעצב תמונה..."):
+        with st.spinner("ה-AI בונה לכם פתרון ותמונה..."):
             try:
-                # 1. יצירת הטקסט
+                # בקשת פתרון בטקסט פשוט - בלי עיצובים מסובכים שמשבשים עברית
+                prompt = f"Business: {biz_name}. Problem: {problem}. Give 3 simple tips in Hebrew. No numbers, no special symbols, just plain text."
+                
                 completion = client.chat.completions.create(
-                    model="llama-3.1-8b-instant",
-                    messages=[{"role": "system", "content": "תן פתרון עסקי קצר בעברית."},
-                              {"role": "user", "content": f"עסק: {biz_name}, בעיה: {problem}"}]
+                    model="llama-3.1-70b-versatile",
+                    messages=[{"role": "user", "content": prompt}],
+                    temperature=0.4
                 )
-                ai_response = completion.choices[0].message.content
+                ai_solution = completion.choices[0].message.content
 
-                # 2. יצירת קישור לתמונה וניקוי שלו
-                # הוספנו מילות מפתח באנגלית כדי שהתמונה תצא מקצועית
-                clean_name = urllib.parse.quote(biz_name)
-                image_url = f"https://pollinations.ai/p/professional_business_marketing_for_{clean_name}?width=1080&height=1080&nologo=true&seed={int(time.time())}"
+                # יצירת תמונה מ-Pollinations לפי שם העסק
+                encoded_biz = urllib.parse.quote(biz_name)
+                image_url = f"https://pollinations.ai/p/professional_business_logo_for_{encoded_biz}_modern_ai_style?width=1080&height=1080&seed=42&model=flux"
 
-                # המתנה קלה כדי לוודא שהתמונה נוצרה בשרת
-                time.sleep(2)
+                # הצגת התמונה באתר
+                st.image(image_url, caption=f"החזון החדש עבור {biz_name}")
 
-                # 3. שליחת המייל כ-HTML
+                # שליחת המייל
                 msg = EmailMessage()
-                msg['Subject'] = f"✅ פתרון ועיצוב עבור {biz_name}"
+                msg.set_content(f"היי!\nהנה הפתרונות עבור {biz_name}:\n\n{ai_solution}\n\nבברכה, מירום.")
+                msg['Subject'] = f"ייעוץ AI עבור {biz_name}"
                 msg['From'] = MY_EMAIL
                 msg['To'] = target_email
-                
-                # עיצוב המייל ב-HTML
-                email_content = f"""
-                <div dir="rtl" style="font-family: sans-serif; border: 1px solid #ddd; padding: 20px; border-radius: 10px;">
-                    <h2 style="color: #2e7d32;">שלום! כאן הסוכן של Meiron AI</h2>
-                    <p>ניתחנו את הבעיה עבור <strong>{biz_name}</strong>:</p>
-                    <p style="background: #f9f9f9; padding: 10px; border-right: 5px solid #2e7d32;">{ai_response}</p>
-                    <hr>
-                    <h3>העיצוב השיווקי שלך מוכן:</h3>
-                    <p>אם התמונה לא מופיעה, לחץ על "הצג תמונות" במייל או בקישור למטה.</p>
-                    <img src="{image_url}" width="500" style="border-radius: 10px; display: block; margin: 0 auto;">
-                    <br>
-                    <div style="text-align: center;">
-                        <a href="{image_url}" style="background: #2e7d32; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">הורד תמונה ברזולוציה גבוהה</a>
-                    </div>
-                </div>
-                """
-                msg.add_header('Content-Type', 'text/html')
-                msg.set_payload(email_content.encode('utf-8'))
 
                 with smtplib.SMTP_SSL('smtp.gmail.com', 465) as smtp:
                     smtp.login(MY_EMAIL, APP_PASSWORD)
                     smtp.send_message(msg)
-
-                # 4. הצגה באתר
-                st.success("הסוכן סיים! בדוק את המייל.")
-                st.image(image_url, caption=f"עיצוב עבור {biz_name}")
-                st.info(ai_response)
+                
+                st.success("זה עבד! בדקו את המייל.")
                 st.balloons()
-
+                
             except Exception as e:
                 st.error(f"שגיאה: {e}")
