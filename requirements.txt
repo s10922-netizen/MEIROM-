@@ -1,9 +1,9 @@
 streamlit
 groq
+duckduckgo_search
+streamlit-gsheets
+st-gsheets-connection
+pandas
 google-api-python-client
 google-auth-httplib2
 google-auth-oauthlib
-duckduckgo_search
-groq
-streamlit-gsheets
-pandas
