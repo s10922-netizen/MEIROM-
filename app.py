@@ -4,7 +4,7 @@ import urllib.parse
 import time
 from groq import Groq
 
-# --- הגדרות מערכת ---
+# --- 1. הגדרות מערכת ---
 st.set_page_config(page_title="MEIROM MAGIC", page_icon="🖤", layout="centered")
 
 try:
@@ -13,7 +13,7 @@ except:
     st.error("Missing API Key")
     st.stop()
 
-# --- עיצוב LUXE ---
+# --- 2. עיצוב LUXE ---
 st.markdown("""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Assistant:wght@200;400;700&display=swap');
@@ -23,13 +23,14 @@ st.markdown("""
     .stButton>button { background-color: #000 !important; color: #fff !important; border-radius: 0px !important; height: 60px !important; width: 100% !important; border: none !important; font-size: 17px; margin-top: 20px; }
     .stButton>button:hover { background-color: #d4af37 !important; }
     input { background-color: transparent !important; border: none !important; border-bottom: 2px solid #eee !important; text-align: center !important; font-size: 20px !important; padding: 10px 0 !important; }
+    .image-card { border: 1px solid #eee; padding: 10px; margin-top: 20px; background: #fafafa; }
 </style>
 """, unsafe_allow_html=True)
 
 if 'page' not in st.session_state: st.session_state.page = "auth"
 if 'magic_done' not in st.session_state: st.session_state.magic_done = False
 
-# --- דף כניסה והרשמה ---
+# --- 3. דף כניסה והרשמה ---
 if st.session_state.page == "auth":
     st.markdown("<div class='brand-title'>MEIROM MAGIC</div><div class='brand-tagline'>AI BUSINESS AGENCY</div>", unsafe_allow_html=True)
     t1, t2 = st.tabs(["כניסה", "הרשמה"])
@@ -50,35 +51,40 @@ if st.session_state.page == "auth":
                               data={"entry.855862094": re, "entry.1847739029": rb})
                 st.success("SUCCESS! GO TO LOGIN.")
 
-# --- דף עבודה ---
+# --- 4. דף עבודה ---
 elif st.session_state.page == "dashboard":
     st.markdown("<div class='brand-title' style='font-size:30px;'>DASHBOARD</div>", unsafe_allow_html=True)
     st.write(f"WELCOME, {st.session_state.user_email.upper()}")
     
-    topic = st.text_area("על מה הסוכנות תעבוד היום?")
+    topic = st.text_area("על מה הסוכנות תעבוד היום?", placeholder="למשל: בושם יוקרתי...")
     
     if st.button("GENERATE MAGIC ✨"):
         if topic:
-            with st.spinner("AI IS WORKING..."):
-                # 1. יצירת טקסט
+            with st.spinner("AI IS GENERATING..."):
+                # א. טקסט
                 res = client.chat.completions.create(
                     model="llama-3.3-70b-versatile",
-                    messages=[{"role":"system","content":"אתה סוכן AI יוקרתי לעסקים. כתוב פוסט קצר בעברית."},
+                    messages=[{"role":"system","content":"אתה סוכן AI יוקרתי. כתוב פוסט קצר בעברית."},
                               {"role":"user","content":topic}]
                 )
                 st.session_state.last_text = res.choices[0].message.content
                 
-                # 2. יצירת תמונה - שיטה הכי ישירה שיש
-                # שימוש בקישור תמונה קבוע כדי לבדוק אם בכלל יש הצגת תמונות
+                # ב. תמונה - שימוש בכתובת ישירה ומאובטחת
                 clean_topic = urllib.parse.quote(topic)
-                st.session_state.last_image_url = f"https://image.pollinations.ai/prompt/luxury,fashion,{clean_topic}?width=1000&height=1000&seed={int(time.time())}"
+                seed = int(time.time())
+                st.session_state.last_image_url = f"https://pollinations.ai/p/luxury,fashion,product,{clean_topic}?width=1024&height=1024&seed={seed}&nologo=true"
                 st.session_state.magic_done = True
         else:
             st.warning("PLEASE ENTER A TOPIC")
 
     if st.session_state.magic_done:
-        # הצגת התמונה - הוספתי "מנגנון בטחון"
-        st.image(st.session_state.last_image_url, use_container_width=True)
+        # ג. הצגת התמונה באמצעות HTML (עוקף חסימות דפדפן)
+        st.markdown(f"""
+            <div class="image-card">
+                <img src="{st.session_state.last_image_url}" style="width:100%; border-radius:0px;">
+            </div>
+        """, unsafe_allow_html=True)
+        
         st.info(st.session_state.last_text)
         
         wa_txt = urllib.parse.quote(st.session_state.last_text)
