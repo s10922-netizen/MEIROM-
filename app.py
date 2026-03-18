@@ -6,111 +6,74 @@ from datetime import datetime
 # --- הגדרות דף ---
 st.set_page_config(page_title="Meirom Magic AI", page_icon="🧚‍♀️", layout="wide")
 
-# --- חיבור מאובטח ל-AI ---
+# --- חיבור ל-AI ---
 try:
     client = Groq(api_key=st.secrets["GROQ_API_KEY"])
-except Exception as e:
+except:
     st.error("חסר מפתח API ב-Secrets!")
     st.stop()
 
+# --- בדיקה: האם זה לקוח חיצוני? ---
+# אם הכתובת מכילה ?view=customer, נציג דף נקי לגמרי
+query_params = st.query_params
+is_customer_view = query_params.get("view") == "customer"
+
 # --- זיכרון המערכת ---
+if 'biz_info' not in st.session_state:
+    st.session_state.biz_info = "ברוכים הבאים לעסק שלנו! אנחנו כאן לכל שאלה."
 if 'users' not in st.session_state:
     st.session_state.users = {"admin@magic.com": "1234"}
-if 'logged_in' not in st.session_state:
-    st.session_state.logged_in = False
-if 'plan' not in st.session_state:
-    st.session_state.plan = None
-if 'biz_info' not in st.session_state:
-    st.session_state.biz_info = ""
 
-# --- עיצוב CSS ---
-st.markdown("""
-<style>
-    @import url('https://fonts.googleapis.com/css2?family=Assistant:wght@300;400;700&display=swap');
-    html, body, [class*="st-"] { font-family: 'Assistant', sans-serif; direction: rtl; text-align: right; }
-    .magic-title {
-        background: linear-gradient(90deg, #7c3aed, #ec4899, #7c3aed);
-        background-size: 200% auto;
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        animation: shine 3s linear infinite;
-        font-size: 60px; font-weight: bold; text-align: center;
-    }
-    @keyframes shine { to { background-position: 200% center; } }
-</style>
-""", unsafe_allow_html=True)
+# --- 🌐 דף לקוח חיצוני (נפרד לגמרי) ---
+if is_customer_view:
+    st.markdown(f"<h1 style='text-align:center; color:#7c3aed;'>✨ ברוכים הבאים ✨</h1>", unsafe_allow_html=True)
+    st.write(st.session_state.biz_info)
+    st.divider()
+    
+    st.subheader("צ'אט עם הנציג הדיגיטלי שלנו 🤖")
+    u_msg = st.chat_input("איך אפשר לעזור?")
+    if u_msg:
+        st.chat_message("user").write(u_msg)
+        r = client.chat.completions.create(model="llama-3.3-70b-versatile", 
+                                          messages=[{"role":"user","content":f"Biz info: {st.session_state.biz_info}. User: {u_msg}. Hebrew."}])
+        st.chat_message("assistant").write(r.choices[0].message.content)
+    st.stop() # עוצר כאן כדי שלא יראו את שאר האתר
 
-# --- לוגיקת דפים ---
+# --- 👑 מכאן והלאה: דף המנכ"לית והניהול (דורש התחברות) ---
+if 'logged_in' not in st.session_state: st.session_state.logged_in = False
+if 'plan' not in st.session_state: st.session_state.plan = None
+
 if not st.session_state.logged_in:
-    st.markdown("<div class='magic-title'>Meirom Magic AI</div>", unsafe_allow_html=True)
-    tab1, tab2 = st.tabs(["🔑 התחברות", "📝 הרשמה"])
-    with tab1:
-        l_email = st.text_input("אימייל", key="login_user")
-        l_pass = st.text_input("סיסמה", type="password", key="login_password")
-        if st.button("כניסה 🚀", key="btn_login"):
-            if l_email in st.session_state.users and st.session_state.users[l_email] == l_pass:
-                st.session_state.logged_in = True
-                st.rerun()
-            else: st.error("פרטים שגויים")
-    with tab2:
-        s_email = st.text_input("מייל להרשמה", key="reg_user")
-        s_pass = st.text_input("סיסמה חדשה", type="password", key="reg_password")
-        if st.button("צרי חשבון 🧚‍♀️", key="btn_reg"):
-            st.session_state.users[s_email] = s_pass
-            st.success("נרשמת!")
+    st.markdown("<h1 style='text-align:center;'>Meirom Magic AI - כניסת מנהלים</h1>", unsafe_allow_html=True)
+    l_email = st.text_input("אימייל", key="l_user")
+    l_pass = st.text_input("סיסמה", type="password", key="l_pass")
+    if st.button("התחברות 🚀"):
+        if l_email in st.session_state.users and st.session_state.users[l_email] == l_pass:
+            st.session_state.logged_in = True
+            st.rerun()
 
 elif st.session_state.plan is None:
-    st.markdown("<h2 style='text-align:center;'>בחרי מסלול ✨</h2>", unsafe_allow_html=True)
-    c1, c2, c3 = st.columns(3)
-    if c1.button("Basic (250₪)", key="p1"): st.session_state.plan = "Basic"; st.rerun()
-    if c2.button("Pro (750₪)", key="p2"): st.session_state.plan = "Pro"; st.rerun()
-    if c3.button("Enterprise (2500₪)", key="p3"): st.session_state.plan = "Enterprise"; st.rerun()
+    st.header("בחרי מסלול")
+    if st.button("Enterprise (2500₪)"): st.session_state.plan = "Enterprise"; st.rerun()
 
 else:
     with st.sidebar:
-        st.markdown(f"### מנכ\"לית מיי 👑\n**חבילה:** {st.session_state.plan}")
-        if st.button("התנתקות 🔒"):
-            st.session_state.logged_in = False
-            st.session_state.plan = None
-            st.rerun()
-        st.divider()
-        menu = ["✨ דף הבית", "🚀 סוכן שיווק", "📅 קביעת פגישות"]
-        if st.session_state.plan == "Enterprise":
-            menu.append("🏢 הגדרות עסק")
-            menu.append("🤖 צ'אטבוט לקוחות")
-            menu.append("🌐 תצוגת לקוח")
-        page = st.radio("ניווט:", menu)
+        st.write(f"חבילה: {st.session_state.plan}")
+        page = st.radio("ניווט:", ["✨ דף הבית", "🏢 הגדרות עסק", "🔗 קישור ללקוחות"])
 
     if page == "✨ דף הבית":
-        st.markdown("<div class='magic-title'>מרכז הבקרה</div>", unsafe_allow_html=True)
-
-    elif page == "🚀 סוכן שיווק":
-        st.header("סוכן שיווק")
-        biz = st.text_input("שם העסק")
-        task = st.text_area("מה לכתוב?")
-        if st.button("הפעל קסם ⚡"):
-            res = client.chat.completions.create(model="llama-3.3-70b-versatile", messages=[{"role":"user","content":f"Write marketing for {biz}: {task} in Hebrew"}])
-            st.write(res.choices[0].message.content)
-
-    elif page == "📅 קביעת פגישות":
-        st.header("סוכן יומן 📅")
-        d = st.date_input("תאריך")
-        t = st.time_input("שעה")
-        if st.button("צור אישור"):
-            st.success(f"נקבע ל-{d} ב-{t}")
-
+        st.title("מרכז שליחה")
+    
     elif page == "🏢 הגדרות עסק":
         st.header("הגדרות עסק")
-        st.session_state.biz_info = st.text_area("מידע על העסק:", value=st.session_state.biz_info)
+        st.session_state.biz_info = st.text_area("מה לספר ללקוחות?", value=st.session_state.biz_info)
         st.button("שמור ✅")
 
-    elif page == "🤖 צ'אטבוט לקוחות" or page == "🌐 תצוגת לקוח":
-        st.header("🤖 הצ'אטבוט של העסק")
-        if not st.session_state.biz_info:
-            st.warning("הזינו מידע בהגדרות עסק!")
-        else:
-            u_msg = st.chat_input("שאל/י משהו...")
-            if u_msg:
-                st.chat_message("user").write(u_msg)
-                r = client.chat.completions.create(model="llama-3.3-70b-versatile", messages=[{"role":"user","content":f"Biz info: {st.session_state.biz_info}. User: {u_msg}. Hebrew."}])
-                st.chat_message("assistant").write(r.choices[0].message.content)
+    elif page == "🔗 קישור ללקוחות":
+        st.header("הקישור שלך להפצה 🌐")
+        st.write("שלחי את הקישור הזה ללקוחות שלך. הם יראו דף נקי בלי צורך בסיסמה!")
+        # יצירת הלינק האוטומטי
+        base_url = "https://your-app-name.streamlit.app/" # תחליפי בכתובת האמיתית שלך
+        customer_link = f"{base_url}?view=customer"
+        st.code(customer_link)
+        st.info("הלקוחות שייכנסו ללינק הזה יראו רק את הצ'אטבוט!")
