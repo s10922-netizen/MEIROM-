@@ -46,6 +46,7 @@ st.markdown("""
 # --- 4. ניהול מצבי עמוד ---
 if 'page' not in st.session_state: st.session_state.page = "auth"
 if 'biz_data' not in st.session_state: st.session_state.biz_data = {}
+if 'user_email' not in st.session_state: st.session_state.user_email = ""
 
 # --- 5. ניווט דפים ---
 
@@ -56,28 +57,33 @@ if st.session_state.page == "auth":
     
     with t1:
         l_mail = st.text_input("אימייל", key="login_m").strip().lower()
+        l_pass = st.text_input("סיסמה", type="password", key="login_p")
         if st.button("כניסה 🚀"):
             df = get_users_df()
-            if not df.empty and l_mail in df.astype(str).values:
+            # מחפש את המייל והסיסמה בתוך הטקסט של הטבלה
+            all_data = df.astype(str).apply(lambda x: x.str.strip().str.lower()).values.flatten()
+            if l_mail in all_data and l_pass in all_data:
                 st.session_state.user_email = l_mail
                 st.session_state.page = "dashboard"
                 st.rerun()
-            else: st.error("משתמש לא נמצא. הירשמי קודם!")
+            else: st.error("פרטים לא נכונים או שגוגל טרם עדכן את הטבלה (לוקח 5 דקות).")
 
     with t2:
         r_mail = st.text_input("מייל לעסק", key="reg_m")
         r_pass = st.text_input("סיסמה", type="password", key="reg_p")
         if st.button("המשך להגדרת העסק"):
-            st.session_state.temp_mail = r_mail
-            st.session_state.page = "onboarding"
-            st.rerun()
+            if r_mail and r_pass:
+                st.session_state.temp_mail = r_mail
+                st.session_state.temp_pass = r_pass
+                st.session_state.page = "onboarding"
+                st.rerun()
 
 # דף הגדרת עסק (Onboarding)
 elif st.session_state.page == "onboarding":
     st.header("ספרי ל-AI על העסק שלך 🖋️")
     b_name = st.text_input("שם העסק", placeholder="למשל: מיירום מג'יק")
-    b_desc = st.text_area("מה העסק עושה?", placeholder="למשל: סוכנות שיווק שמתמחה ב...")
-    b_target = st.text_input("מי קהל היעד?", placeholder="למשל: בעלות עסקים קטנים")
+    b_desc = st.text_area("מה העסק עושה?", placeholder="תיאור עבור ה-AI...")
+    b_target = st.text_input("מי קהל היעד?", placeholder="מי הלקוחות האידיאליים?")
     
     if st.button("שמור והמשך לבחירת חבילה"):
         st.session_state.biz_data = {"name": b_name, "desc": b_desc, "target": b_target}
@@ -91,49 +97,27 @@ elif st.session_state.page == "packages":
     with c1:
         st.markdown("<div class='package-card'><h3>🌟 VIP</h3><p>AI ללא הגבלה</p></div>", unsafe_allow_html=True)
         if st.button("בחרתי VIP"):
-            save_to_google(st.session_state.temp_mail, {**st.session_state.biz_data, "plan": "VIP"})
+            save_to_google(st.session_state.temp_mail, {**st.session_state.biz_data, "plan": "VIP", "pass": st.session_state.temp_pass})
+            st.session_state.user_email = st.session_state.temp_mail # כניסה מיידית
             st.session_state.page = "dashboard"
-            st.session_state.user_email = st.session_state.temp_mail
             st.rerun()
     with c2:
         st.markdown("<div class='package-card'><h3>🚀 Basic</h3><p>כלים בסיסיים</p></div>", unsafe_allow_html=True)
         if st.button("בחרתי בסיסי"):
-            save_to_google(st.session_state.temp_mail, {**st.session_state.biz_data, "plan": "Basic"})
+            save_to_google(st.session_state.temp_mail, {**st.session_state.biz_data, "plan": "Basic", "pass": st.session_state.temp_pass})
+            st.session_state.user_email = st.session_state.temp_mail # כניסה מיידית
             st.session_state.page = "dashboard"
-            st.session_state.user_email = st.session_state.temp_mail
             st.rerun()
 
 # מרכז הבקרה (הפורטל)
 elif st.session_state.page == "dashboard":
     with st.sidebar:
         st.title("Control Center")
-        menu = st.radio("תפריט", ["🏠 דף הבית", "✍️ סוכן תוכן שיווקי", "💬 צ'אט שירות", "👥 ניהול לקוחות (למנהלת)"])
+        menu = st.sidebar.radio("תפריט", ["🏠 דף הבית", "✍️ סוכן תוכן AI", "💬 צ'אט שירות", "👥 ניהול לקוחות (למנהלת)"])
         if st.button("התנתקות"):
             st.session_state.page = "auth"
             st.rerun()
 
     if menu == "🏠 דף הבית":
         st.markdown(f"## ברוך הבא, {st.session_state.user_email}")
-        st.info("כאן תוכל לנהל את העסק שלך בעזרת הכלים החכמים שלנו.")
-        
-    elif menu == "✍️ סוכן תוכן שיווקי":
-        st.header("יצירת פוסטים מותאמים אישית")
-        goal = st.text_input("מה המטרה של הפוסט?")
-        if st.button("צור תוכן"):
-            biz = st.session_state.get('biz_data', {})
-            prompt = f"כתוב פוסט לעסק בשם {biz.get('name')}. העסק עוסק ב: {biz.get('desc')}. קהל היעד הוא: {biz.get('target')}. מטרה: {goal}."
-            res = client.chat.completions.create(model="llama-3.3-70b-versatile", messages=[{"role":"user","content":prompt}])
-            st.write(res.choices[0].message.content)
-
-    elif menu == "💬 צ'אט שירות":
-        st.header("צ'אטבוט שירות לקוחות")
-        user_q = st.chat_input("שאל משהו...")
-        if user_q:
-            st.chat_message("user").write(user_q)
-            res = client.chat.completions.create(model="llama-3.3-70b-versatile", messages=[{"role":"system","content":"אתה נציג שירות אדיב."}, {"role":"user","content":user_q}])
-            st.chat_message("assistant").write(res.choices[0].message.content)
-
-    elif menu == "👥 ניהול לקוחות (למנהלת)":
-        st.header("דאטה של כל המערכת")
-        df = get_users_df()
-        st.dataframe(df)
+        st
