@@ -58,43 +58,35 @@ elif st.session_state.page == "dashboard":
     st.markdown("<div class='brand-title' style='font-size:35px;'>DASHBOARD</div>", unsafe_allow_html=True)
     st.write(f"WELCOME, {st.session_state.user_email.upper()}")
     
-    topic = st.text_area("על מה הסוכנות תעבוד היום?", placeholder="תארי את המשימה השחורה...")
+    topic = st.text_area("על מה הסוכנות תעבוד היום?")
     
     if st.button("GENERATE MAGIC ✨"):
         if topic:
-            with st.spinner("מעבד נתונים ומוצא תמונה..."):
-                try:
-                    # 1. יצירת טקסט
-                    res = client.chat.completions.create(
-                        model="llama-3.3-70b-versatile",
-                        messages=[{"role":"system","content":"אתה סוכן AI יוקרתי לעסקים. כתוב תוכן שיווקי קצר בעברית."}, {"role":"user","content":topic}]
-                    )
-                    st.session_state.last_text = res.choices[0].message.content
-                    
-                    # 2. מציאת תמונה ב-Pixabay
-                    search_query = urllib.parse.quote(topic)
-                    img_api_url = f"https://pixabay.com/api/?key=49117392-1594165681c2f901a1829e006&q={search_query}&image_type=photo&orientation=horizontal"
-                    img_resp = requests.get(img_api_url)
-                    
-                    if img_resp.status_code == 200:
-                        img_data = img_resp.json()
-                        if img_data.get('hits'):
-                            st.session_state.last_image_url = img_data['hits'][0]['largeImageURL']
-                        else:
-                            st.session_state.last_image_url = "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?q=80&w=1000" # תמונת בניין יוקרתי כברירת מחדל
-                    else:
-                        st.session_state.last_image_url = "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?q=80&w=1000"
-                    
-                    st.session_state.magic_done = True
-                except Exception as e:
-                    st.error(f"Error: {e}")
+            with st.spinner("מעבד נתונים..."):
+                # 1. יצירת טקסט ב-Groq
+                res = client.chat.completions.create(
+                    model="llama-3.3-70b-versatile",
+                    messages=[
+                        {"role": "system", "content": "אתה סוכן AI יוקרתי לעסקים. כתוב תוכן שיווקי קצר בעברית."},
+                        {"role": "user", "content": topic}
+                    ]
+                )
+                st.session_state.last_text = res.choices[0].message.content
+                
+                # 2. חיפוש תמונה רלוונטית ב-Unsplash (ללא צורך ב-Key)
+                # אנחנו מוסיפים מילות מפתח לחיפוש כדי לקבל תוצאה מדויקת
+                search_query = urllib.parse.quote(topic)
+                st.session_state.last_image_url = f"https://source.unsplash.com/1024x1024/?{search_query},luxury"
+                st.session_state.magic_done = True
         else:
             st.warning("PLEASE ENTER A TOPIC")
 
     if st.session_state.magic_done:
+        # הצגת התמונה
         st.image(st.session_state.last_image_url, use_container_width=True)
         st.info(st.session_state.last_text)
         
+        # כפתור וואטסאפ
         wa_url = f"https://wa.me/?text={urllib.parse.quote(st.session_state.last_text)}"
         st.markdown(f'<a href="{wa_url}" target="_blank"><button style="width:100%; background-color:#25D366 !important; color:white; border:none; height:50px; cursor:pointer;">SEND TO WHATSAPP 📱</button></a>', unsafe_allow_html=True)
 
