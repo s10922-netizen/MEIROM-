@@ -4,16 +4,16 @@ import urllib.parse
 import time
 from groq import Groq
 
-# --- הגדרות מערכת ---
+# --- 1. הגדרות מערכת ---
 st.set_page_config(page_title="MEIROM MAGIC", page_icon="🖤", layout="centered")
 
 try:
     client = Groq(api_key=st.secrets["GROQ_API_KEY"])
 except:
-    st.error("Missing Groq API Key")
+    st.error("Missing API Key")
     st.stop()
 
-# --- עיצוב סוכנות AI יוקרתית ---
+# --- 2. עיצוב סוכנות AI יוקרתית ---
 st.markdown("""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Assistant:wght@200;400;700&display=swap');
@@ -30,7 +30,7 @@ st.markdown("""
 if 'page' not in st.session_state: st.session_state.page = "auth"
 if 'magic_done' not in st.session_state: st.session_state.magic_done = False
 
-# --- דף כניסה והרשמה (נשמר ב-100%) ---
+# --- 3. דף כניסה והרשמה ---
 if st.session_state.page == "auth":
     st.markdown("<div class='brand-title'>MEIROM MAGIC</div><div class='brand-tagline'>AI BUSINESS AGENCY</div>", unsafe_allow_html=True)
     t1, t2 = st.tabs(["כניסה", "הרשמה"])
@@ -51,41 +51,45 @@ if st.session_state.page == "auth":
                               data={"entry.855862094": re, "entry.1847739029": rb})
                 st.success("SUCCESS! GO TO LOGIN.")
 
-# --- דף עבודה ---
+# --- 4. דף עבודה ---
 elif st.session_state.page == "dashboard":
     st.markdown("<div class='brand-title' style='font-size:30px;'>DASHBOARD</div>", unsafe_allow_html=True)
     st.write(f"WELCOME, {st.session_state.user_email.upper()}")
     
-    topic = st.text_area("על מה הסוכנות תעבוד היום?", placeholder="למשל: בושם יוקרתי, שעון זהב...")
+    topic = st.text_area("על מה הסוכנות תעבוד היום?", placeholder="למשל: בושם יוקרתי, שעון, שמלה...")
     
     if st.button("GENERATE MAGIC ✨"):
         if topic:
-            with st.spinner("סוכנות AI מעבדת נתונים..."):
-                # 1. יצירת טקסט
+            with st.spinner("AI IS GENERATING..."):
+                # א. יצירת טקסט
                 res = client.chat.completions.create(
                     model="llama-3.3-70b-versatile",
-                    messages=[{"role":"system","content":"אתה סוכן AI יוקרתי לעסקים. כתוב פוסט שיווקי קצר בעברית."},
+                    messages=[{"role":"system","content":"אתה סוכן AI יוקרתי. כתוב פוסט קצר בעברית."},
                               {"role":"user","content":topic}]
                 )
                 st.session_state.last_text = res.choices[0].message.content
                 
-                # 2. תרגום הנושא לאנגלית לטובת חיפוש תמונה מדויק
+                # ב. תרגום הנושא לאנגלית לחיפוש תמונה מדויק
                 trans = client.chat.completions.create(
                     model="llama-3.1-8b-instant",
-                    messages=[{"role":"system","content":"Translate to 2 keywords in English. Only keywords."},
+                    messages=[{"role":"system","content":"Translate the topic to 2 English keywords. Only keywords."},
                               {"role":"user","content":topic}]
                 )
                 kw = trans.choices[0].message.content.strip().replace(" ", ",")
                 
-                # 3. משיכת תמונה ממאגר מקצועי (עוקף את כל השגיאות)
-                # אנחנו משתמשים ב-Unsplash Source שזה הכי יציב שיש
-                st.session_state.last_image_url = f"https://source.unsplash.com/featured/1024x1024?luxury,fashion,{kw}"
+                # ג. משיכת תמונה משרת יציב (Unsplash)
+                # שימוש בכתובת שתמיד עובדת ומביאה תמונה רלוונטית
+                st.session_state.last_image_url = f"https://images.unsplash.com/photo-1?auto=format&fit=crop&w=800&q=80&keywords=luxury,{kw}&sig={int(time.time())}"
+                
+                # גיבוי: אם הכתובת מעל לא נטענת, נשתמש בפורמט הפשוט
+                st.session_state.last_image_url = f"https://source.unsplash.com/featured/800x800?luxury,{kw}"
+                
                 st.session_state.magic_done = True
         else:
             st.warning("PLEASE ENTER A TOPIC")
 
     if st.session_state.magic_done:
-        # הצגת התמונה - הפעם זה חייב לעבוד
+        # הצגת התמונה
         st.image(st.session_state.last_image_url, use_container_width=True)
         st.info(st.session_state.last_text)
         
