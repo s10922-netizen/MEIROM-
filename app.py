@@ -1,7 +1,6 @@
 import streamlit as st
 import requests
 import urllib.parse
-import time
 from groq import Groq
 
 # --- 1. הגדרות מערכת ---
@@ -13,7 +12,7 @@ except:
     st.error("Missing API Key")
     st.stop()
 
-# --- 2. עיצוב LUXE ---
+# --- 2. עיצוב סוכנות LUXE ---
 st.markdown("""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Assistant:wght@200;400;700&display=swap');
@@ -23,14 +22,19 @@ st.markdown("""
     .stButton>button { background-color: #000 !important; color: #fff !important; border-radius: 0px !important; height: 60px !important; width: 100% !important; border: none !important; font-size: 17px; margin-top: 20px; }
     .stButton>button:hover { background-color: #d4af37 !important; }
     input { background-color: transparent !important; border: none !important; border-bottom: 2px solid #eee !important; text-align: center !important; font-size: 20px !important; padding: 10px 0 !important; }
-    .image-card { border: 1px solid #eee; padding: 10px; margin-top: 20px; background: #fafafa; }
+    /* עיצוב ה"תמונה" החדשה */
+    .icon-box { 
+        width: 150px; height: 150px; background: #fdfaf0; border: 2px solid #d4af37; 
+        border-radius: 50%; margin: 20px auto; display: flex; align-items: center; 
+        justify-content: center; font-size: 70px; box-shadow: 0 10px 20px rgba(212,175,55,0.1);
+    }
 </style>
 """, unsafe_allow_html=True)
 
 if 'page' not in st.session_state: st.session_state.page = "auth"
 if 'magic_done' not in st.session_state: st.session_state.magic_done = False
 
-# --- 3. דף כניסה והרשמה ---
+# --- 3. דף כניסה והרשמה (כל הפיצ'רים שלך נשמרים) ---
 if st.session_state.page == "auth":
     st.markdown("<div class='brand-title'>MEIROM MAGIC</div><div class='brand-tagline'>AI BUSINESS AGENCY</div>", unsafe_allow_html=True)
     t1, t2 = st.tabs(["כניסה", "הרשמה"])
@@ -56,34 +60,35 @@ elif st.session_state.page == "dashboard":
     st.markdown("<div class='brand-title' style='font-size:30px;'>DASHBOARD</div>", unsafe_allow_html=True)
     st.write(f"WELCOME, {st.session_state.user_email.upper()}")
     
-    topic = st.text_area("על מה הסוכנות תעבוד היום?", placeholder="למשל: בושם יוקרתי...")
+    topic = st.text_area("על מה הסוכנות תעבוד היום?", placeholder="למשל: סוודר, בושם, נעליים...")
     
     if st.button("GENERATE MAGIC ✨"):
         if topic:
-            with st.spinner("AI IS GENERATING..."):
-                # א. טקסט
+            with st.spinner("סוכנות AI מייצרת תוכן..."):
+                # א. יצירת הטקסט ב-Groq
                 res = client.chat.completions.create(
                     model="llama-3.3-70b-versatile",
-                    messages=[{"role":"system","content":"אתה סוכן AI יוקרתי. כתוב פוסט קצר בעברית."},
+                    messages=[{"role":"system","content":"אתה סוכן AI יוקרתי לעסקים. כתוב פוסט שיווקי קצר בעברית."},
                               {"role":"user","content":topic}]
                 )
                 st.session_state.last_text = res.choices[0].message.content
                 
-                # ב. תמונה - שימוש בכתובת ישירה ומאובטחת
-                clean_topic = urllib.parse.quote(topic)
-                seed = int(time.time())
-                st.session_state.last_image_url = f"https://pollinations.ai/p/luxury,fashion,product,{clean_topic}?width=1024&height=1024&seed={seed}&nologo=true"
+                # ב. בחירת אייקון מתאים (הפתרון החינמי והחסין)
+                icon = "✨" # ברירת מחדל
+                if "סוודר" in topic or "בגד" in topic: icon = "🧶"
+                elif "בושם" in topic: icon = "🧴"
+                elif "שעון" in topic: icon = "⌚"
+                elif "נעל" in topic: icon = "👠"
+                elif "תכשיט" in topic or "זהב" in topic: icon = "💎"
+                
+                st.session_state.last_icon = icon
                 st.session_state.magic_done = True
         else:
-            st.warning("PLEASE ENTER A TOPIC")
+            st.warning("אנא הכניסי נושא")
 
     if st.session_state.magic_done:
-        # ג. הצגת התמונה באמצעות HTML (עוקף חסימות דפדפן)
-        st.markdown(f"""
-            <div class="image-card">
-                <img src="{st.session_state.last_image_url}" style="width:100%; border-radius:0px;">
-            </div>
-        """, unsafe_allow_html=True)
+        # הצגת ה"תמונה" (האייקון המעוצב)
+        st.markdown(f'<div class="icon-box">{st.session_state.last_icon}</div>', unsafe_allow_html=True)
         
         st.info(st.session_state.last_text)
         
