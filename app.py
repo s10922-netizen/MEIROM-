@@ -1,6 +1,7 @@
 import streamlit as st
 import requests
 import urllib.parse
+import time
 from groq import Groq
 
 # --- הגדרות מערכת ---
@@ -51,9 +52,9 @@ if st.session_state.page == "auth":
             if rm:
                 requests.post("https://docs.google.com/forms/d/e/1FAIpQLSdWPISX09Kj4Z2oQFSC6smC5KtXm1iVvSrc_5nxvvsFx6hX7Q/formResponse", 
                               data={"entry.855862094": rm, "entry.1847739029": rb})
-                st.success("SUCCESS! GO TO LOG IN TAB.")
+                st.success("SUCCESS! GO TO LOG IN.")
 
-# --- דף עבודה (Dashboard) ---
+# --- דף עבודה ---
 elif st.session_state.page == "dashboard":
     st.markdown("<div class='brand-title' style='font-size:35px;'>DASHBOARD</div>", unsafe_allow_html=True)
     st.write(f"WELCOME, {st.session_state.user_email.upper()}")
@@ -62,18 +63,24 @@ elif st.session_state.page == "dashboard":
     
     if st.button("GENERATE MAGIC ✨"):
         if topic:
-            with st.spinner("מעבד נתונים..."):
+            with st.spinner("סוכנות AI מעבדת נתונים ויוצרת תוכן..."):
                 # 1. יצירת טקסט
                 res = client.chat.completions.create(
                     model="llama-3.3-70b-versatile",
-                    messages=[{"role": "system", "content": "אתה סוכן AI יוקרתי לעסקים. כתוב תוכן שיווקי קצר בעברית."}, {"role": "user", "content": topic}]
+                    messages=[{"role": "system", "content": "כתוב פוסט יוקרתי לעסק בעברית."}, {"role": "user", "content": topic}]
                 )
                 st.session_state.last_text = res.choices[0].message.content
                 
-                # 2. מציאת תמונה מדויקת
-                # אנחנו משתמשים ב-keyword מהבקשה ומוסיפים לו הקשר של מוצר/צילום
-                search_query = urllib.parse.quote(topic)
-                st.session_state.last_image_url = f"https://source.unsplash.com/1024x1024/?{search_query},product,photography"
+                # 2. תרגום נושא לאנגלית כדי שהתמונה תהיה קשורה (בלי שבעל העסק ידע)
+                trans = client.chat.completions.create(
+                    model="llama-3.1-8b-instant",
+                    messages=[{"role": "system", "content": "Translate the topic to 3 keywords in English. Only keywords."}, {"role": "user", "content": topic}]
+                )
+                keywords = trans.choices[0].message.content.strip().replace(" ", ",")
+                
+                # 3. יצירת תמונה (Pollinations עם Seed רענן)
+                seed = int(time.time())
+                st.session_state.last_image_url = f"https://image.pollinations.ai/prompt/luxury,high-quality,product,photo,{keywords}?width=1024&height=1024&nologo=true&seed={seed}"
                 st.session_state.magic_done = True
         else:
             st.warning("PLEASE ENTER A TOPIC")
