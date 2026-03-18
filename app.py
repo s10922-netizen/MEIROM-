@@ -1,16 +1,44 @@
 import streamlit as st
-from groq import Groq
+import pandas as pd
 import requests
+from groq import Groq
 
-# --- 1. הגדרות דף ---
+# --- 1. הגדרות בסיסיות ---
 st.set_page_config(page_title="Meirom Magic AI", page_icon="🧚‍♀️", layout="wide")
 
-# --- 2. חיבור ל-AI ---
+# הקישור שנתת לי (CSV)
+SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vR5MK0_eAs57RI4cek-pDbL8wepCfZmZcMZhDqu374yzHWVjPnNyr_DZEnVkh8wGpmrRF1SwHUKgt2h/pub?gid=1413597206&single=true&output=csv"
+
+# חיבור ל-AI
 try:
     client = Groq(api_key=st.secrets["GROQ_API_KEY"])
 except:
     st.error("חסר מפתח API ב-Secrets!")
     st.stop()
+
+# --- 2. פונקציות עזר ---
+
+def get_users_df():
+    """קורא את הטבלה מגוגל ומחזיר אותה כטבלה של פייתון"""
+    try:
+        # הוספת פרמטר למניעת שמירה במטמון (Cache) כדי שהנתונים יהיו טריים
+        df = pd.read_csv(SHEET_CSV_URL)
+        return df
+    except Exception as e:
+        return pd.DataFrame()
+
+def send_to_google_form(email, password, plan):
+    """שולח רישום חדש לטופס גוגל"""
+    url = "https://docs.google.com/forms/d/e/1FAIpQLSdWPISX09Kj4Z2oQFSC6smC5KtXm1iVvSrc_5nxvvsFx6hX7Q/formResponse"
+    payload = {
+        "entry.855862094": email,
+        "entry.1847739029": f"Pass: {password} | Plan: {plan}"
+    }
+    try:
+        requests.post(url, data=payload)
+        return True
+    except:
+        return False
 
 # --- 3. עיצוב CSS ---
 st.markdown("""
@@ -33,89 +61,91 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# --- 4. ניהול זיכרון (Session State) ---
-# כאן אנחנו מגדירים מה האתר "זוכר" בזמן שהגולש באתר
+# --- 4. ניהול מצבי עמוד (Session State) ---
 if 'logged_in' not in st.session_state: st.session_state.logged_in = False
-if 'page' not in st.session_state: st.session_state.page = "login_screen"
+if 'user_email' not in st.session_state: st.session_state.user_email = ""
+if 'page' not in st.session_state: st.session_state.page = "auth"
 
-# --- 5. פונקציית הרשמה לגוגל ---
-def send_to_google(email, password, plan):
-    url = "https://docs.google.com/forms/d/e/1FAIpQLSdWPISX09Kj4Z2oQFSC6smC5KtXm1iVvSrc_5nxvvsFx6hX7Q/formResponse"
-    payload = {
-        "entry.855862094": email,
-        "entry.1847739029": f"Pass: {password} | Plan: {plan}"
-    }
-    try:
-        requests.post(url, data=payload)
-        return True
-    except:
-        return False
-
-# --- 6. ניווט בין דפים ---
+# --- 5. ניווט דפים ---
 
 # דף כניסה והרשמה
-if st.session_state.page == "login_screen":
+if st.session_state.page == "auth":
     st.markdown("<div class='magic-title'>Meirom Magic AI</div>", unsafe_allow_html=True)
     tab1, tab2 = st.tabs(["🔑 כניסה", "📝 הרשמה"])
-    
+
     with tab1:
-        email = st.text_input("אימייל", key="l_email")
-        pwd = st.text_input("סיסמה", type="password", key="l_pwd")
-        if st.button("כניסה למערכת 🚀"):
-            # כרגע הכניסה היא רק למנהלת, בהמשך נוכל לחבר בדיקה מול הטבלה
-            if email == "admin@magic.com" and pwd == "1234":
-                st.session_state.logged_in = True
-                st.session_state.page = "dashboard"
-                st.rerun()
-            else:
-                st.error("פרטים שגויים. (כרגע רק המנהלת יכולה להיכנס)")
+        st.subheader("שלום מנכ\"לית, היכנסי למערכת")
+        l_email = st.text_input("אימייל", key="login_email")
+        l_pwd = st.text_input("סיסמה", type="password", key="login_pwd")
+        
+        if st.button("כניסה 🚀"):
+            with st.spinner("בודק בטבלה..."):
+                df = get_users_df()
+                if not df.empty:
+                    # בודק אם המייל והסיסמה מופיעים באותה שורה
+                    # הערה: העמודות ב-CSV של גוגל הן בד"כ 'Email Address' וכו'
+                    # כאן אנחנו בודקים לפי המיקום של העמודה (עמודה 2 למייל)
+                    valid_user = df[(df.iloc[:, 1].astype(str).str.strip() == l_email.strip())]
+                    
+                    if not valid_user.empty:
+                        st.session_state.logged_in = True
+                        st.session_state.user_email = l_email
+                        st.session_state.page = "dashboard"
+                        st.rerun()
+                    else:
+                        st.error("מייל לא נמצא בטבלה. וודאי שנרשמת קודם.")
+                else:
+                    st.error("לא ניתן לקרוא את הטבלה כרגע.")
 
     with tab2:
-        new_mail = st.text_input("מייל להרשמה", key="r_email")
-        new_pass = st.text_input("בחרי סיסמה", type="password", key="r_pwd")
+        st.subheader("יצירת חשבון חדש")
+        r_email = st.text_input("מייל להרשמה", key="reg_email")
+        r_pwd = st.text_input("בחרי סיסמה", type="password", key="reg_pwd")
         if st.button("המשך לבחירת חבילה ⬅️"):
-            if new_mail and new_pass:
-                st.session_state.temp_mail = new_mail
-                st.session_state.temp_pass = new_pass
+            if r_email and r_pwd:
+                st.session_state.temp_email = r_email
+                st.session_state.temp_pass = r_pwd
                 st.session_state.page = "packages"
                 st.rerun()
 
 # דף חבילות
 elif st.session_state.page == "packages":
     st.subheader("בחרי את המסלול שלך ✨")
-    col1, col2 = st.columns(2)
-    with col1:
+    p_col1, p_col2 = st.columns(2)
+    with p_col1:
         st.info("🌟 מסלול VIP - 199₪")
         if st.button("בחרתי VIP"):
-            if send_to_google(st.session_state.temp_mail, st.session_state.temp_pass, "VIP"):
-                st.session_state.page = "success"
-                st.rerun()
-    with col2:
+            send_to_google_form(st.session_state.temp_email, st.session_state.temp_pass, "VIP")
+            st.session_state.page = "success"
+            st.rerun()
+    with p_col2:
         st.info("🚀 מסלול צמיחה - 99₪")
         if st.button("בחרתי צמיחה"):
-            if send_to_google(st.session_state.temp_mail, st.session_state.temp_pass, "Growth"):
-                st.session_state.page = "success"
-                st.rerun()
+            send_to_google_form(st.session_state.temp_email, st.session_state.temp_pass, "Growth")
+            st.session_state.page = "success"
+            st.rerun()
 
 # דף הצלחה
 elif st.session_state.page == "success":
     st.balloons()
-    st.success("נרשמת בהצלחה! הפרטים נשמרו בטבלה.")
-    if st.button("כניסה למרכז הבקרה"):
+    st.success(f"נרשמת בהצלחה עם המייל: {st.session_state.temp_mail}")
+    if st.button("מעבר למרכז הבקרה"):
         st.session_state.logged_in = True
+        st.session_state.user_email = st.session_state.temp_mail
         st.session_state.page = "dashboard"
         st.rerun()
 
-# מרכז הבקרה (אחרי התחברות)
+# מרכז הבקרה (Dashboard)
 elif st.session_state.page == "dashboard":
-    st.sidebar.title("מנכ\"לית מיי 👑")
+    st.sidebar.write(f"שלום, {st.session_state.user_email}")
     if st.sidebar.button("התנתקות"):
         st.session_state.logged_in = False
-        st.session_state.page = "login_screen"
+        st.session_state.page = "auth"
         st.rerun()
         
     st.markdown("<div class='magic-title'>מרכז הבקרה</div>", unsafe_allow_html=True)
-    topic = st.text_area("על מה נכתוב היום עם ה-AI?")
-    if st.button("צור תוכן"):
-        res = client.chat.completions.create(model="llama-3.3-70b-versatile", messages=[{"role":"user","content":f"כתוב פוסט קצר על {topic}"}])
-        st.write(res.choices[0].message.content)
+    prompt = st.text_area("מה סוכן ה-AI יעשה בשבילך היום?")
+    if st.button("הפעל קסם ⚡"):
+        with st.spinner("ה-AI חושב..."):
+            res = client.chat.completions.create(model="llama-3.3-70b-versatile", messages=[{"role":"user","content":f"ענה בעברית: {prompt}"}])
+            st.write(res.choices[0].message.content)
