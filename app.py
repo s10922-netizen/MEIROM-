@@ -6,35 +6,31 @@ import pandas as pd
 # --- הגדרות דף ---
 st.set_page_config(page_title="Meirom Magic AI", page_icon="🧚‍♀️", layout="wide")
 
-# --- חיבורים (AI וטבלה) ---
-client = Groq(api_key=st.secrets["GROQ_API_KEY"])
-# חיבור ל-Google Sheets
-conn = st.connection("gsheets", type=GSheetsConnection)
+# --- חיבורים ---
+try:
+    client = Groq(api_key=st.secrets["GROQ_API_KEY"])
+    conn = st.connection("gsheets", type=GSheetsConnection)
+except Exception as e:
+    st.error(f"שגיאת חיבור: {e}")
+    st.stop()
 
-# --- פונקציה לקריאת משתמשים מהטבלה ---
-def get_users():
-    try:
-        # קורא את הטבלה שהגדרת ב-Secrets
-        df = conn.read(spreadsheet=st.secrets["GSHEET_URL"])
-        return df.set_index('Email')['Password'].to_dict()
-    except:
-        return {"admin@magic.com": "1234"}
+# --- לוגיקה ---
+st.markdown("<h1 style='text-align:center;'>Meirom Magic AI</h1>", unsafe_allow_html=True)
 
-# --- פונקציה להוספת משתמש חדש לטבלה ---
-def add_user(email, password):
-    df = conn.read(spreadsheet=st.secrets["GSHEET_URL"])
-    new_data = pd.DataFrame([{"Email": email, "Password": password}])
-    updated_df = pd.concat([df, new_data], ignore_index=True)
-    conn.update(spreadsheet=st.secrets["GSHEET_URL"], data=updated_df)
+# בדיקת לקוח חיצוני
+query_params = st.query_params
+if query_params.get("view") == "customer":
+    st.write("ברוכים הבאים לעסק!")
+    # כאן יבוא דף הלקוח הנקי
+    st.stop()
 
-# --- לוגיקה של המערכת ---
-if 'logged_in' not in st.session_state: st.session_state.logged_in = False
+# דף התחברות/הרשמה
+tab1, tab2 = st.tabs(["🔑 התחברות", "📝 הרשמה"])
 
-users = get_users() # טוען את המשתמשים מהגוגל שיטס!
-
-# --- (כאן מגיע כל שאר הקוד של העיצוב והדפים...) ---
-
-# בקטע של ההרשמה (Tab 2), נשנה את הכפתור לזה:
-# if st.button("צרי חשבון ✨"):
-#     add_user(new_email, new_pass)
-#     st.success("נרשמת בטבלה! עכשיו זה נשמר לתמיד.")
+with tab2:
+    st.subheader("יצירת חשבון חדש")
+    new_email = st.text_input("מייל", key="reg_email")
+    new_pass = st.text_input("סיסמה", type="password", key="reg_pass")
+    if st.button("צרי חשבון ✨"):
+        # כאן תבוא הפקודה שכותבת לטבלה
+        st.success("נרשמת בהצלחה!")
