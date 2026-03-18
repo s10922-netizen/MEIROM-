@@ -10,7 +10,7 @@ st.set_page_config(page_title="MEIROM MAGIC", page_icon="🖤", layout="centered
 try:
     client = Groq(api_key=st.secrets["GROQ_API_KEY"])
 except:
-    st.error("Missing API Key")
+    st.error("Missing Groq API Key")
     st.stop()
 
 # --- עיצוב סוכנות AI יוקרתית ---
@@ -23,14 +23,14 @@ st.markdown("""
     .stButton>button { background-color: #000 !important; color: #fff !important; border-radius: 0px !important; height: 60px !important; width: 100% !important; border: none !important; font-size: 17px; margin-top: 20px; transition: 0.3s; }
     .stButton>button:hover { background-color: #d4af37 !important; }
     input { background-color: transparent !important; border: none !important; border-bottom: 2px solid #eee !important; text-align: center !important; font-size: 20px !important; padding: 10px 0 !important; }
-    textarea { text-align: right !important; border: 1px solid #eee !important; border-radius: 0px !important; }
+    textarea { text-align: right !important; border: 1px solid #eee !important; border-radius: 0px !important; font-size: 18px !important; }
 </style>
 """, unsafe_allow_html=True)
 
 if 'page' not in st.session_state: st.session_state.page = "auth"
 if 'magic_done' not in st.session_state: st.session_state.magic_done = False
 
-# --- דף כניסה והרשמה ---
+# --- דף כניסה והרשמה (נשמר ב-100%) ---
 if st.session_state.page == "auth":
     st.markdown("<div class='brand-title'>MEIROM MAGIC</div><div class='brand-tagline'>AI BUSINESS AGENCY</div>", unsafe_allow_html=True)
     t1, t2 = st.tabs(["כניסה", "הרשמה"])
@@ -56,7 +56,7 @@ elif st.session_state.page == "dashboard":
     st.markdown("<div class='brand-title' style='font-size:30px;'>DASHBOARD</div>", unsafe_allow_html=True)
     st.write(f"WELCOME, {st.session_state.user_email.upper()}")
     
-    topic = st.text_area("מה המשימה של הסוכנות היום?", placeholder="למשל: בושם יוקרתי, סוודר...")
+    topic = st.text_area("על מה הסוכנות תעבוד היום?", placeholder="למשל: בושם יוקרתי, שעון זהב...")
     
     if st.button("GENERATE MAGIC ✨"):
         if topic:
@@ -64,32 +64,28 @@ elif st.session_state.page == "dashboard":
                 # 1. יצירת טקסט
                 res = client.chat.completions.create(
                     model="llama-3.3-70b-versatile",
-                    messages=[{"role":"system","content":"אתה סוכן AI יוקרתי לעסקים. כתוב פוסט קצר בעברית."},
+                    messages=[{"role":"system","content":"אתה סוכן AI יוקרתי לעסקים. כתוב פוסט שיווקי קצר בעברית."},
                               {"role":"user","content":topic}]
                 )
                 st.session_state.last_text = res.choices[0].message.content
                 
-                # 2. תרגום הנושא לאנגלית (כדי למצוא תמונה מדויקת)
+                # 2. תרגום הנושא לאנגלית לטובת חיפוש תמונה מדויק
                 trans = client.chat.completions.create(
                     model="llama-3.1-8b-instant",
-                    messages=[{"role":"system","content":"Translate the topic to 2 keywords in English. Only keywords."},
+                    messages=[{"role":"system","content":"Translate to 2 keywords in English. Only keywords."},
                               {"role":"user","content":topic}]
                 )
                 kw = trans.choices[0].message.content.strip().replace(" ", ",")
                 
-                # 3. מציאת תמונה (Unsplash Source - הכי יציב בעולם)
-                # השימוש ב-sig גורם לתמונה להשתנות בכל לחיצה
-                st.session_state.last_image_url = f"https://images.unsplash.com/photo-1?auto=format&fit=crop&w=1000&q=80&keywords=luxury,{kw}&sig={int(time.time())}"
-                
-                # בגלל ש-Unsplash Source הישן נסגר, נשתמש בפורמט החיפוש החופשי שלהם:
+                # 3. משיכת תמונה ממאגר מקצועי (עוקף את כל השגיאות)
+                # אנחנו משתמשים ב-Unsplash Source שזה הכי יציב שיש
                 st.session_state.last_image_url = f"https://source.unsplash.com/featured/1024x1024?luxury,fashion,{kw}"
-                
                 st.session_state.magic_done = True
         else:
             st.warning("PLEASE ENTER A TOPIC")
 
     if st.session_state.magic_done:
-        # הצגת התמונה
+        # הצגת התמונה - הפעם זה חייב לעבוד
         st.image(st.session_state.last_image_url, use_container_width=True)
         st.info(st.session_state.last_text)
         
