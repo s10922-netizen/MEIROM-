@@ -120,4 +120,25 @@ elif st.session_state.page == "dashboard":
 
     if menu == "🏠 דף הבית":
         st.markdown(f"## ברוך הבא, {st.session_state.user_email}")
-        st
+        st.info("כאן תמצאו את כל הכלים לניהול העסק.")
+        
+    elif menu == "✍️ סוכן תוכן AI":
+        st.header("יצירת פוסטים מותאמים אישית")
+        goal = st.text_input("מה המטרה של הפוסט?")
+        if st.button("צור תוכן"):
+            biz = st.session_state.get('biz_data', {})
+            prompt = f"כתוב פוסט לעסק בשם {biz.get('name')}. העסק עוסק ב: {biz.get('desc')}. קהל היעד הוא: {biz.get('target')}. מטרה: {goal}."
+            res = client.chat.completions.create(model="llama-3.3-70b-versatile", messages=[{"role":"user","content":prompt}])
+            st.write(res.choices[0].message.content)
+
+    elif menu == "💬 צ'אט שירות":
+        st.header("צ'אטבוט שירות לקוחות")
+        user_q = st.text_input("שאל משהו את נציג ה-AI שלכם...")
+        if user_q:
+            res = client.chat.completions.create(model="llama-3.3-70b-versatile", messages=[{"role":"system","content":"אתה נציג שירות אדיב."}, {"role":"user","content":user_q}])
+            st.chat_message("assistant").write(res.choices[0].message.content)
+
+    elif menu == "👥 ניהול לקוחות (למנהלת)":
+        st.header("דאטה של כל המערכת")
+        df = get_users_df()
+        st.dataframe(df)
