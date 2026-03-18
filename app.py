@@ -12,7 +12,7 @@ except:
     st.error("Missing Groq API Key")
     st.stop()
 
-# --- עיצוב סוכנות AI LUXE (שומר על כל הפיצ'רים שלך) ---
+# --- עיצוב סוכנות AI LUXE ---
 st.markdown("""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Assistant:wght@200;300;400;600;700&display=swap');
@@ -63,26 +63,31 @@ elif st.session_state.page == "dashboard":
     if st.button("GENERATE MAGIC ✨"):
         if topic:
             with st.spinner("מעבד נתונים ומוצא תמונה..."):
-                # 1. טקסט מהיר
-                res = client.chat.completions.create(
-                    model="llama-3.3-70b-versatile",
-                    messages=[{"role":"system","content":"אתה סוכן AI יוקרתי לעסקים. כתוב פוסט שיווקי קצר בעברית."}, {"role":"user","content":topic}]
-                )
-                st.session_state.last_text = res.choices[0].message.content
-                
-                # 2. מציאת תמונה רלוונטית (Pixabay API)
-                # אנחנו מחפשים תמונה לפי המילה שהמשתמש כתב
-                search_query = urllib.parse.quote(topic)
-                img_api_url = f"https://pixabay.com/api/?key=49117392-1594165681c2f901a1829e006&q={search_query}&image_type=photo&orientation=horizontal&per_page=3"
-                img_data = requests.get(img_api_url).json()
-                
-                if img_data.get('hits'):
-                    st.session_state.last_image_url = img_data['hits'][0]['largeImageURL']
-                else:
-                    # ברירת מחדל יוקרתית אם לא נמצאה תמונה ספציפית
-                    st.session_state.last_image_url = "https://images.unsplash.com/photo-1490481651871-ab68de25d43d?q=80&w=1000"
-                
-                st.session_state.magic_done = True
+                try:
+                    # 1. יצירת טקסט
+                    res = client.chat.completions.create(
+                        model="llama-3.3-70b-versatile",
+                        messages=[{"role":"system","content":"אתה סוכן AI יוקרתי לעסקים. כתוב תוכן שיווקי קצר בעברית."}, {"role":"user","content":topic}]
+                    )
+                    st.session_state.last_text = res.choices[0].message.content
+                    
+                    # 2. מציאת תמונה ב-Pixabay
+                    search_query = urllib.parse.quote(topic)
+                    img_api_url = f"https://pixabay.com/api/?key=49117392-1594165681c2f901a1829e006&q={search_query}&image_type=photo&orientation=horizontal"
+                    img_resp = requests.get(img_api_url)
+                    
+                    if img_resp.status_code == 200:
+                        img_data = img_resp.json()
+                        if img_data.get('hits'):
+                            st.session_state.last_image_url = img_data['hits'][0]['largeImageURL']
+                        else:
+                            st.session_state.last_image_url = "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?q=80&w=1000" # תמונת בניין יוקרתי כברירת מחדל
+                    else:
+                        st.session_state.last_image_url = "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?q=80&w=1000"
+                    
+                    st.session_state.magic_done = True
+                except Exception as e:
+                    st.error(f"Error: {e}")
         else:
             st.warning("PLEASE ENTER A TOPIC")
 
@@ -91,7 +96,7 @@ elif st.session_state.page == "dashboard":
         st.info(st.session_state.last_text)
         
         wa_url = f"https://wa.me/?text={urllib.parse.quote(st.session_state.last_text)}"
-        st.markdown(f'<a href="{wa_url}" target="_blank"><button style="background-color:#25D366 !important; color:white;">SEND TO WHATSAPP 📱</button></a>', unsafe_allow_html=True)
+        st.markdown(f'<a href="{wa_url}" target="_blank"><button style="width:100%; background-color:#25D366 !important; color:white; border:none; height:50px; cursor:pointer;">SEND TO WHATSAPP 📱</button></a>', unsafe_allow_html=True)
 
     if st.button("LOG OUT"):
         st.session_state.page = "auth"
