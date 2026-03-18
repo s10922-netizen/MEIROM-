@@ -51,7 +51,7 @@ if st.session_state.page == "auth":
             if rm:
                 requests.post("https://docs.google.com/forms/d/e/1FAIpQLSdWPISX09Kj4Z2oQFSC6smC5KtXm1iVvSrc_5nxvvsFx6hX7Q/formResponse", 
                               data={"entry.855862094": rm, "entry.1847739029": rb})
-                st.success("SUCCESS! GO TO LOG IN.")
+                st.success("SUCCESS! GO TO LOG IN TAB.")
 
 # --- דף עבודה (Dashboard) ---
 elif st.session_state.page == "dashboard":
@@ -63,30 +63,25 @@ elif st.session_state.page == "dashboard":
     if st.button("GENERATE MAGIC ✨"):
         if topic:
             with st.spinner("מעבד נתונים..."):
-                # 1. יצירת טקסט ב-Groq
+                # 1. יצירת טקסט
                 res = client.chat.completions.create(
                     model="llama-3.3-70b-versatile",
-                    messages=[
-                        {"role": "system", "content": "אתה סוכן AI יוקרתי לעסקים. כתוב תוכן שיווקי קצר בעברית."},
-                        {"role": "user", "content": topic}
-                    ]
+                    messages=[{"role": "system", "content": "אתה סוכן AI יוקרתי לעסקים. כתוב תוכן שיווקי קצר בעברית."}, {"role": "user", "content": topic}]
                 )
                 st.session_state.last_text = res.choices[0].message.content
                 
-                # 2. חיפוש תמונה רלוונטית ב-Unsplash (ללא צורך ב-Key)
-                # אנחנו מוסיפים מילות מפתח לחיפוש כדי לקבל תוצאה מדויקת
+                # 2. מציאת תמונה מדויקת
+                # אנחנו משתמשים ב-keyword מהבקשה ומוסיפים לו הקשר של מוצר/צילום
                 search_query = urllib.parse.quote(topic)
-                st.session_state.last_image_url = f"https://source.unsplash.com/1024x1024/?{search_query},luxury"
+                st.session_state.last_image_url = f"https://source.unsplash.com/1024x1024/?{search_query},product,photography"
                 st.session_state.magic_done = True
         else:
             st.warning("PLEASE ENTER A TOPIC")
 
     if st.session_state.magic_done:
-        # הצגת התמונה
         st.image(st.session_state.last_image_url, use_container_width=True)
         st.info(st.session_state.last_text)
         
-        # כפתור וואטסאפ
         wa_url = f"https://wa.me/?text={urllib.parse.quote(st.session_state.last_text)}"
         st.markdown(f'<a href="{wa_url}" target="_blank"><button style="width:100%; background-color:#25D366 !important; color:white; border:none; height:50px; cursor:pointer;">SEND TO WHATSAPP 📱</button></a>', unsafe_allow_html=True)
 
