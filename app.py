@@ -5,11 +5,11 @@ import time
 from groq import Groq
 
 # --- 1. הגדרות מערכת ---
-st.set_page_config(page_title="MagicOS Elite", page_icon="⚡", layout="centered")
+st.set_page_config(page_title="MagicOS Admin", page_icon="⚡", layout="centered")
 
 SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vR5MK0_eAs57RI4cek-pDbL8wepCfZmZcMZhDqu374yzHWVjPnNyr_DZEnVkh8wGpmrRF1SwHUKgt2h/pub?gid=1413597206&single=true&output=csv"
 
-# המייל שלך - זיהוי מנכ"לית
+# 🔑 המייל של המנכ"לית
 MY_ADMIN_EMAIL = "Meiromp10@gmail.com" 
 
 try:
@@ -18,7 +18,7 @@ except:
     st.error("Missing API Key")
     st.stop()
 
-# --- 2. עיצוב Cyber UI - הכל במרכז וגדול ---
+# --- 2. עיצוב CYBER UI (נקי, גדול, ממורכז) ---
 st.markdown("""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Assistant:wght@300;700&family=Orbitron:wght@700&display=swap');
@@ -31,53 +31,45 @@ st.markdown("""
 
     .cyber-title {
         font-family: 'Orbitron', sans-serif;
-        font-size: 38px; font-weight: 700;
+        font-size: 35px; font-weight: 700;
         background: linear-gradient(90deg, #00f2fe, #7c3aed);
         -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-        margin-bottom: 30px;
+        margin-bottom: 20px;
     }
 
-    /* כרטיס תפריט מרכזי */
-    .menu-container {
-        display: flex; flex-direction: column; align-items: center; justify-content: center;
-        width: 100%; max-width: 500px; margin: 0 auto;
-    }
-
-    /* כפתורי ענק */
+    /* כפתורי ענק במרכז */
     .stButton>button {
         background: linear-gradient(135deg, #6366f1, #a855f7);
-        color: white; border-radius: 25px; height: 90px;
-        font-size: 26px; font-weight: 700; width: 100%;
-        border: none; margin: 15px 0;
+        color: white; border-radius: 25px; height: 100px;
+        font-size: 28px; font-weight: 700; width: 100%;
+        border: none; margin: 20px 0;
         box-shadow: 0 10px 20px rgba(124, 58, 237, 0.3);
-        transition: 0.3s ease;
     }
-    .stButton>button:hover {
-        transform: scale(1.05); box-shadow: 0 15px 30px rgba(0, 242, 254, 0.5);
+
+    .glass-card {
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: 30px; padding: 40px; border: 1px solid rgba(255, 255, 255, 0.1);
+        margin-bottom: 20px; width: 100%;
     }
 
     /* התנתקות */
     .logout-btn button {
         background: transparent !important; border: 1px solid #ff4b4b !important;
-        height: 50px !important; font-size: 16px !important; margin-top: 50px !important;
-    }
-
-    .glass-card {
-        background: rgba(255, 255, 255, 0.05);
-        border-radius: 30px; padding: 30px; border: 1px solid rgba(255, 255, 255, 0.1);
-        margin-bottom: 20px;
+        height: 45px !important; font-size: 14px !important; margin-top: 40px !important;
     }
 </style>
 """, unsafe_allow_html=True)
 
-# --- 3. לוגיקה ---
-def get_biz_name(email):
+# --- 3. פונקציית בדיקה חסינה ---
+def get_user_data(email):
     try:
         url = f"{SHEET_CSV_URL}&t={time.time()}"
         df = pd.read_csv(url)
         search_m = str(email).strip().lower()
+        # חיפוש המייל בכל התאים
         for _, row in df.iterrows():
             if search_m in " ".join(row.astype(str)).lower():
+                # מחלץ את השם (בדרך כלל בעמודה האחרונה)
                 return str(row.iloc[-1]).split('|')[-1].replace('Biz:', '').strip()
         return None
     except: return None
@@ -87,52 +79,62 @@ if 'page' not in st.session_state: st.session_state.page = "auth"
 if 'user_email' not in st.session_state: st.session_state.user_email = ""
 if 'tool' not in st.session_state: st.session_state.tool = "home"
 
-# א. כניסה
+# א. דף כניסה
 if st.session_state.page == "auth":
     st.markdown("<div class='cyber-title'>MAGIC OS</div>", unsafe_allow_html=True)
     st.markdown("<div class='glass-card'>", unsafe_allow_html=True)
-    u_mail = st.text_input("אימייל", placeholder="הכניסי מייל...").strip().lower()
-    u_pass = st.text_input("סיסמה", type="password", placeholder="הכניסי סיסמה...")
+    u_mail = st.text_input("אימייל", placeholder="מייל...").strip().lower()
+    u_pass = st.text_input("סיסמה", type="password", placeholder="סיסמה...")
     
-    if st.button("כניסה למערכת ⚡"):
-        if u_mail:
-            biz = get_biz_name(u_mail)
+    if st.button("שיגור ⚡"):
+        if u_mail == MY_ADMIN_EMAIL:
             st.session_state.user_email = u_mail
-            if biz or u_mail == MY_ADMIN_EMAIL:
-                st.session_state.biz_name = biz if biz else "מנכ\"לית"
+            st.session_state.biz_name = "מנכ\"לית"
+            st.session_state.page = "dashboard"
+            st.rerun()
+        else:
+            biz = get_user_data(u_mail)
+            st.session_state.user_email = u_mail
+            if biz:
+                st.session_state.biz_name = biz
+                st.session_state.is_new = False
                 st.session_state.page = "dashboard"
             else:
                 st.session_state.page = "onboarding"
             st.rerun()
     st.markdown("</div>", unsafe_allow_html=True)
 
-# ב. אונבורדינג
+# ב. אונבורדינג (למשתמשים חדשים)
 elif st.session_state.page == "onboarding":
-    st.markdown("<div class='cyber-title'>נעים להכיר!</div>", unsafe_allow_html=True)
+    st.markdown("<div class='cyber-title'>ברוכה הבאה!</div>", unsafe_allow_html=True)
     st.markdown("<div class='glass-card'>", unsafe_allow_html=True)
-    new_biz = st.text_input("מה שם העסק שלך?")
+    b_name = st.text_input("מה שם העסק?")
+    b_loc = st.text_input("איפה אתם ממוקמים?")
     if st.button("בואי נתחיל ✨"):
-        if new_biz:
-            st.session_state.biz_name = new_biz
+        if b_name:
+            st.session_state.biz_name = b_name
+            st.session_state.is_new = True
+            # שליחה לגוגל
             url = "https://docs.google.com/forms/d/e/1FAIpQLSdWPISX09Kj4Z2oQFSC6smC5KtXm1iVvSrc_5nxvvsFx6hX7Q/formResponse"
-            requests.post(url, data={"entry.855862094": st.session_state.user_email, "entry.1847739029": f"Biz: {new_biz}"})
+            requests.post(url, data={"entry.855862094": st.session_state.user_email, "entry.1847739029": f"Biz: {b_name} | Loc: {b_loc}"})
             st.session_state.page = "dashboard"
             st.rerun()
     st.markdown("</div>", unsafe_allow_html=True)
 
-# ג. לוח בקרה מרכזי
+# ג. לוח בקרה
 elif st.session_state.page == "dashboard":
-    # פנייה אישית
+    # --- מערכת הפנייה האישית ---
     if st.session_state.user_email == MY_ADMIN_EMAIL:
-        header_msg = "ברוכה הבאה מנכ\"לית מיי ✨"
+        welcome = "ברוכה הבאה מנכ\"לית מיי. כל המערכות פועלות כשורה."
+    elif st.session_state.get('is_new'):
+        welcome = f"ברוכה הבאה לעסק {st.session_state.biz_name}!"
     else:
-        header_msg = f"ברוכה השבה, עסק {st.session_state.biz_name}"
+        welcome = f"ברוכה השבה לעסק {st.session_state.biz_name}!"
 
-    st.markdown(f"<div class='cyber-title'>{header_msg}</div>", unsafe_allow_html=True)
+    st.markdown(f"<div class='cyber-title'>{welcome}</div>", unsafe_allow_html=True)
     
-    # הצגת התפריט רק אם לא בתוך כלי
     if st.session_state.tool == "home":
-        st.markdown("### מה את רוצה לעשות היום?")
+        st.markdown("### מה היעד הבא שלך?")
         if st.button("🤖 סוכן תוכן AI"): 
             st.session_state.tool = "ai"
             st.rerun()
@@ -140,34 +142,28 @@ elif st.session_state.page == "dashboard":
             st.session_state.tool = "chat"
             st.rerun()
     
-    # תצוגת הכלים
-    if st.session_state.tool == "ai":
+    if st.session_state.tool != "home":
         st.markdown("<div class='glass-card'>", unsafe_allow_html=True)
-        st.subheader("סוכן תוכן AI")
-        goal = st.text_input("על מה נכתוב?")
-        if st.button("צור קסם ✨"):
-            res = client.chat.completions.create(model="llama-3.3-70b-versatile", messages=[{"role":"user","content":f"פוסט ל{st.session_state.biz_name} על {goal}"}])
-            st.write(res.choices[0].message.content)
+        if st.session_state.tool == "ai":
+            st.subheader("סוכן התוכן שלך")
+            topic = st.text_input("נושא:")
+            if st.button("צור פוסט ✨"):
+                res = client.chat.completions.create(model="llama-3.3-70b-versatile", messages=[{"role":"user","content":f"פוסט ל{st.session_state.biz_name} על {topic}"}])
+                st.write(res.choices[0].message.content)
+        elif st.session_state.tool == "chat":
+            st.subheader("צ'אט שירות")
+            q = st.chat_input("דברי איתי...")
+            if q:
+                res = client.chat.completions.create(model="llama-3.3-70b-versatile", messages=[{"role":"system","content":f"נציגת שירות של {st.session_state.biz_name}"},{"role":"user","content":q}])
+                st.write(res.choices[0].message.content)
+        
         if st.button("חזרה לתפריט"):
             st.session_state.tool = "home"
             st.rerun()
         st.markdown("</div>", unsafe_allow_html=True)
 
-    elif st.session_state.tool == "chat":
-        st.markdown("<div class='glass-card'>", unsafe_allow_html=True)
-        st.subheader("צ'אט שירות")
-        q = st.chat_input("שאלי אותי...")
-        if q:
-            res = client.chat.completions.create(model="llama-3.3-70b-versatile", messages=[{"role":"system","content":f"נציגת שירות של {st.session_state.biz_name}"},{"role":"user","content":q}])
-            st.write(res.choices[0].message.content)
-        if st.button("חזרה לתפריט"):
-            st.session_state.tool = "home"
-            st.rerun()
-        st.markdown("</div>", unsafe_allow_html=True)
-
-    # התנתקות למטה
     st.markdown("<div class='logout-btn'>", unsafe_allow_html=True)
-    if st.button("התנתקות מהמערכת"):
+    if st.button("התנתקות"):
         st.session_state.page = "auth"
         st.session_state.tool = "home"
         st.rerun()
