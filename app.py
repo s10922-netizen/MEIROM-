@@ -2,17 +2,16 @@ import streamlit as st
 from groq import Groq
 import requests
 
-# --- 1. הגדרות דף ---
 st.set_page_config(page_title="Meirom Magic AI", page_icon="🧚‍♀️", layout="wide")
 
-# --- 2. חיבור ל-AI ---
+# --- AI ---
 try:
     client = Groq(api_key=st.secrets["GROQ_API_KEY"])
 except:
-    st.error("חסר מפתח API ב-Secrets!")
+    st.error("חסר מפתח API")
     st.stop()
 
-# --- 3. עיצוב CSS ---
+# --- CSS ---
 st.markdown("""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Assistant:wght@400;700&display=swap');
@@ -26,65 +25,52 @@ st.markdown("""
         font-size: 60px; font-weight: bold; text-align: center; padding: 20px;
     }
     @keyframes shine { to { background-position: 200% center; } }
-    .stButton>button {
-        background: linear-gradient(45deg, #7c3aed, #ec4899);
-        color: white; border: none; border-radius: 20px; padding: 10px 25px; width: 100%;
-    }
+    .stButton>button { background: linear-gradient(45deg, #7c3aed, #ec4899); color: white; border-radius: 20px; width: 100%; }
 </style>
 """, unsafe_allow_html=True)
 
-# --- 4. לוגיקה ---
 if 'logged_in' not in st.session_state: st.session_state.logged_in = False
-if 'biz_info' not in st.session_state: st.session_state.biz_info = "ברוכים הבאים!"
 
-# --- 5. דף כניסה והרשמה ---
+# --- דף כניסה והרשמה ---
 if not st.session_state.logged_in:
     st.markdown("<div class='magic-title'>Meirom Magic AI</div>", unsafe_allow_html=True)
-    tab1, tab2 = st.tabs(["🔑 התחברות", "📝 הרשמה"])
+    t1, t2 = st.tabs(["🔑 כניסה", "📝 הרשמה"])
     
-    with tab1:
-        st.subheader("כניסת מנכ\"לית")
-        e = st.text_input("אימייל", key="l_e")
+    with t1:
+        e = st.text_input("מייל", key="l_e")
         p = st.text_input("סיסמה", type="password", key="l_p")
-        if st.button("כניסה 🚀"):
+        if st.button("כניסה"):
             if e == "admin@magic.com" and p == "1234":
                 st.session_state.logged_in = True
                 st.rerun()
-            else: st.error("פרטים שגויים")
-            
-    with tab2:
-        st.subheader("הצטרפי בחינם ✨")
-        new_mail = st.text_input("מייל להרשמה", key="r_e")
-        new_pass = st.text_input("בחרי סיסמה ", type="password", key="r_p") # וודאי שיש רווח קטן ב-label
+
+    with t2:
+        st.subheader("הרשמה מהירה")
+        new_mail = st.text_input("מייל חדש", key="r_e")
+        new_pass = st.text_input("סיסמה חדשה", type="password", key="r_p")
         
         if st.button("צרי חשבון ✨"):
             if new_mail and new_pass:
-                # הכתובת הישירה לשליחה - שימי לב לשינוי הקטן ב-URL
+                # הכתובת הישירה לשליחה
                 form_url = "https://docs.google.com/forms/d/e/1FAIpQLSdWPISX09Kj4Z2oQFSC6smC5KtXm1iVvSrc_5nxvvsFx6hX7Q/formResponse"
                 
+                # המידע לשליחה
                 payload = {
                     "entry.855862094": new_mail,
                     "entry.1847739029": new_pass
                 }
                 
                 try:
-                    # שיטה פשוטה יותר שעוקפת את ה-401
-                    response = requests.post(form_url, data=payload)
-                    
-                    # גוגל תמיד מחזירה 200 אם הטופס נשלח, גם אם לא ראינו את זה
-                    st.balloons()
-                    st.success("נרשמת בהצלחה! תבדקי עכשיו את הטבלה הירוקה.")
+                    # שליחה בשיטת Form-Data (כמו שדפדפן עושה)
+                    r = requests.post(form_url, data=payload)
+                    if r.status_code == 200 or r.status_code == 0:
+                        st.balloons()
+                        st.success("נשלח! בדקי את הטבלה הירוקה עכשיו.")
+                    else:
+                        st.error(f"גוגל החזיר שגיאה: {r.status_code}")
                 except Exception as ex:
-                    st.error(f"תקלה בחיבור: {ex}")
-            else:
-                st.warning("נא למלא את כל השדות")
+                    st.error(f"תקלה: {ex}")
 
 else:
-    # מרכז הבקרה
-    with st.sidebar:
-        st.markdown("### מנכ\"לית מיי 👑")
-        if st.button("התנתקות"):
-            st.session_state.logged_in = False
-            st.rerun()
+    st.sidebar.button("התנתקות", on_click=lambda: st.session_state.update({"logged_in": False}))
     st.markdown("<div class='magic-title'>מרכז הבקרה</div>", unsafe_allow_html=True)
-    st.write("המערכת עובדת!")
