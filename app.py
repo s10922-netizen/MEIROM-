@@ -1,6 +1,7 @@
 import streamlit as st
 from groq import Groq
 from duckduckgo_search import DDGS
+import urllib.parse # כלי חדש לסידור הטקסט לוואטסאפ
 
 # --- הגדרות דף ---
 st.set_page_config(page_title="Meirom Magic AI", page_icon="🧚‍♀️", layout="wide")
@@ -17,14 +18,12 @@ def web_search(query):
     except:
         return "לא נמצא מידע עדכני."
 
-# --- עיצוב מתקדם (CSS) ---
+# --- עיצוב (CSS) ---
 st.markdown("""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Assistant:wght@300;400;700&display=swap');
     html, body, [class*="st-"] { font-family: 'Assistant', sans-serif; direction: rtl; text-align: right; }
-    
     [data-testid="stSidebar"] { background-color: #f3f0ff; border-left: 1px solid #7c3aed; }
-    
     .magic-title {
         background: linear-gradient(90deg, #7c3aed, #ec4899, #7c3aed);
         background-size: 200% auto;
@@ -32,71 +31,66 @@ st.markdown("""
         -webkit-text-fill-color: transparent;
         animation: shine 3s linear infinite;
         font-size: 50px; font-weight: bold; text-align: center;
-        margin-bottom: 20px;
     }
     @keyframes shine { to { background-position: 200% center; } }
-
-    .stButton>button {
-        border-radius: 20px; border: none; padding: 10px 25px;
-        background: linear-gradient(135deg, #7c3aed 0%, #a855f7 100%);
-        color: white; font-weight: bold; transition: 0.3s;
-    }
-    .stButton>button:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(124, 58, 237, 0.4); }
 </style>
 """, unsafe_allow_html=True)
 
 # --- סרגל צד ---
 with st.sidebar:
     st.markdown("<h2 style='text-align:center;'>🧚‍♀️ Meirom Menu</h2>", unsafe_allow_html=True)
-    st.divider()
-    page = st.radio("לאן נלך היום?", 
-                    ["✨ דף הבית", "🚀 סוכן שיווק", "🧹 מנקה הבלגן (לסבתא)", "🔗 חיבורים"])
-    st.divider()
-    st.write("V 2.0 - מנכ\"לית: מיי")
+    page = st.radio("ניווט:", ["✨ דף הבית", "🚀 סוכן שיווק", "🧹 מנקה הבלגן"])
+    st.write("V 2.1 - WhatsApp Enabled")
 
 # --- דף הבית ---
 if page == "✨ דף הבית":
     st.markdown("<div class='magic-title'>Meirom Magic AI</div>", unsafe_allow_html=True)
-    st.write("### ברוכה הבאה למרכז השליטה שלך!")
-    st.info("השתמשי בתפריט מצד ימין כדי לעבור בין הכלים השונים.")
-    
-    col1, col2, col3 = st.columns(3)
-    col1.metric("סטטוס מערכת", "פעיל ✨")
-    col2.metric("סוכנים רצים", "3")
-    col3.metric("חיסכון בזמן", "95%")
+    st.write("### ברוכה הבאה! היום האוטומציה שלך עוברת לשלב הבא.")
 
-# --- סוכן שיווק ---
+# --- סוכן שיווק (כאן הקסם של הוואטסאפ!) ---
 elif page == "🚀 סוכן שיווק":
-    st.header("סוכן שיווק ואסטרטגיה")
+    st.header("סוכן שיווק חכם")
     biz = st.text_input("שם העסק")
-    task = st.text_area("מה הסוכן צריך לבצע?")
+    task = st.text_area("מה לכתוב?")
     
     if st.button("הפעל קסם ⚡", use_container_width=True):
-        with st.status("הפיה בעבודה...") as s:
+        with st.status("יוצר תוכן...") as s:
             context = web_search(f"מידע על {biz}")
-            prompt = f"Context: {context}\nTask: {task} for {biz}. Language: Hebrew. Finish with 'Meirom Magic AI'."
+            prompt = f"Write a marketing post for {biz}: {task}. Language: Hebrew. Finish with 'Meirom Magic AI'."
             res = client.chat.completions.create(
                 model="llama-3.3-70b-versatile",
                 messages=[{"role": "user", "content": prompt}]
             )
+            ans = res.choices[0].message.content
             st.success("הנה התוצאה:")
-            st.write(res.choices[0].message.content)
-            st.balloons()
+            st.write(ans)
             
+            # --- כפתור הוואטסאפ האמיתי ---
             st.divider()
-            c1, c2, c3 = st.columns(3)
-            c1.button("שלח למייל 📧")
-            c2.button("שלח לוואטסאפ 📱")
-            c3.button("פרסם באינסטגרם 📸")
+            # מכין את הטקסט לשליחה בקישור
+            whatsapp_text = urllib.parse.quote(ans)
+            whatsapp_url = f"https://wa.me/?text={whatsapp_text}"
+            
+            st.markdown(f"""
+                <a href="{whatsapp_url}" target="_blank">
+                    <button style="
+                        width: 100%;
+                        background-color: #25D366;
+                        color: white;
+                        padding: 15px;
+                        border: none;
+                        border-radius: 15px;
+                        font-weight: bold;
+                        cursor: pointer;
+                        font-size: 18px;
+                    ">
+                        שלחי את זה בוואטסאפ עכשיו! 📱✨
+                    </button>
+                </a>
+            """, unsafe_allow_html=True)
+            st.balloons()
 
 # --- דף סבתא ---
-elif page == "🧹 מנקה הבלגן (לסבתא)":
-    st.header("הפיצ'ר של סבתא 👵")
-    st.write("בקרוב: ה-AI יסרוק את הטלפון שלך וימחק הודעות ספאם ותמונות כפולות!")
-
-# --- חיבורים ---
-elif page == "🔗 חיבורים":
-    st.header("ניהול חיבורים")
-    st.checkbox("WhatsApp API")
-    st.checkbox("Instagram Business")
-    st.checkbox("Google Mail")
+elif page == "🧹 מנקה הבלגן":
+    st.header("מנקה הבלגן 👵")
+    st.write("בפיתוח...")
