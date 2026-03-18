@@ -116,7 +116,7 @@ elif st.session_state.page == "onboarding":
 elif st.session_state.page == "dashboard":
     # הפנייה האישית
     if st.session_state.user_email.lower() == MY_ADMIN_EMAIL.lower():
-        welcome = "ברוכה הבאה מנכ\"לית מיי. כל המערכות פועלות כשורה."
+        welcome = "ברוכה הבאה מנכ\"לית מיי. כל המערכות פועלות מושלם."
     elif st.session_state.get('is_new'):
         welcome = f"ברוכה הבאה לעסק {st.session_state.biz_name}!"
     else:
