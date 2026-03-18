@@ -1,21 +1,18 @@
 import streamlit as st
 from groq import Groq
-from streamlit_gsheets import GSheetsConnection
-import pandas as pd
-import urllib.parse
-from datetime import datetime
+import requests
 
-# --- 1. הגדרות דף וחיבורים ---
+# --- 1. הגדרות דף ---
 st.set_page_config(page_title="Meirom Magic AI", page_icon="🧚‍♀️", layout="wide")
 
+# --- 2. חיבור ל-AI ---
 try:
     client = Groq(api_key=st.secrets["GROQ_API_KEY"])
-    conn = st.connection("gsheets", type=GSheetsConnection)
-except Exception as e:
-    st.error(f"שגיאת חיבור (Secrets/Requirements): {e}")
+except:
+    st.error("חסר מפתח API ב-Secrets!")
     st.stop()
 
-# --- 2. עיצוב CSS (הקסם הסגול) ---
+# --- 3. עיצוב CSS (החזרתי את הקסם) ---
 st.markdown("""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Assistant:wght@400;700&display=swap');
@@ -36,82 +33,78 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# --- 3. לוגיקה וזיכרון ---
+# --- 4. לוגיקה וזיכרון ---
 if 'logged_in' not in st.session_state: st.session_state.logged_in = False
-if 'plan' not in st.session_state: st.session_state.plan = None
-if 'biz_info' not in st.session_state: st.session_state.biz_info = ""
+if 'biz_info' not in st.session_state: st.session_state.biz_info = "ברוכים הבאים לעסק!"
 
-# --- 4. פונקציות גוגל שיטס ---
-def get_all_users():
-    try:
-        df = conn.read(spreadsheet=st.secrets["GSHEET_URL"])
-        return df
-    except:
-        return pd.DataFrame(columns=["Email", "Password"])
-
-def save_new_user(email, password):
-    df = get_all_users()
-    new_user = pd.DataFrame([{"Email": email, "Password": password}])
-    updated_df = pd.concat([df, new_user], ignore_index=True)
-    conn.update(spreadsheet=st.secrets["GSHEET_URL"], data=updated_df)
-
-# --- 5. ניווט דפים ---
-
-# א. דף לקוח חיצוני
+# דף לקוח חיצוני
 if st.query_params.get("view") == "customer":
     st.markdown("<div class='magic-title'>ברוכים הבאים</div>", unsafe_allow_html=True)
     st.write(st.session_state.biz_info)
-    customer_msg = st.chat_input("איך אפשר לעזור?")
-    if customer_msg:
-        st.chat_message("user").write(customer_msg)
-        res = client.chat.completions.create(model="llama-3.3-70b-versatile", messages=[{"role":"user","content":f"Biz: {st.session_state.biz_info}. User: {customer_msg}. Hebrew."}])
-        st.chat_message("assistant").write(res.choices[0].message.content)
     st.stop()
 
-# ב. דף כניסה והרשמה (עם חיבור לשיטס)
+# --- 5. דף כניסה והרשמה ---
 if not st.session_state.logged_in:
     st.markdown("<div class='magic-title'>Meirom Magic AI</div>", unsafe_allow_html=True)
     tab1, tab2 = st.tabs(["🔑 התחברות", "📝 הרשמה"])
     
     with tab1:
-        le = st.text_input("אימייל", key="l_e")
-        lp = st.text_input("סיסמה", type="password", key="l_p")
-        if st.button("כניסה 🚀", key="l_b"):
-            all_users = get_all_users()
-            if not all_users.empty and le in all_users['Email'].values:
-                correct_pass = all_users[all_users['Email'] == le]['Password'].values[0]
-                if str(lp) == str(correct_pass):
-                    st.session_state.logged_in = True
-                    st.rerun()
-            st.error("פרטים לא נכונים או משתמש לא קיים")
+        st.subheader("כניסת מנכ\"לית")
+        e = st.text_input("אימייל", key="l_e")
+        p = st.text_input("סיסמה", type="password", key="l_p")
+        if st.button("כניסה 🚀"):
+            if e == "admin@magic.com" and p == "1234":
+                st.session_state.logged_in = True
+                st.rerun()
+            else: st.error("פרטים שגויים")
             
     with tab2:
-        ne = st.text_input("מייל חדש", key="r_e")
-        np = st.text_input("סיסמה", type="password", key="r_p")
-        if st.button("צרי חשבון ✨", key="r_b"):
-            save_new_user(ne, np)
-            st.balloons()
-            st.success("נרשמת בטבלה! עכשיו אפשר להתחבר.")
-
-# ג. דף ניהול (אחרי התחברות)
-else:
-    if st.session_state.plan is None:
-        st.header("בחרי מסלול")
-        if st.button("Enterprise (2500₪)"): st.session_state.plan = "Enterprise"; st.rerun()
-    else:
-        with st.sidebar:
-            st.write(f"חבילה: {st.session_state.plan}")
-            page = st.radio("ניווט:", ["✨ דף הבית", "🚀 סוכן שיווק", "🏢 הגדרות עסק", "🔗 קישור ללקוחות"])
-            if st.button("התנתקות"): st.session_state.logged_in = False; st.rerun()
-
-        if page == "✨ דף הבית":
-            st.markdown("<div class='magic-title'>מרכז הבקרה</div>", unsafe_allow_html=True)
+        st.subheader("הצטרפי למהפכה ✨")
+        new_mail = st.text_input("מייל להרשמה", key="r_e")
+        new_pass = st.text_input("בחרי סיסמה", type="password", key="r_p")
         
-        elif page == "🏢 הגדרות עסק":
-            st.header("הגדרות עסק")
-            st.session_state.biz_info = st.text_area("מידע ללקוחות:", value=st.session_state.biz_info)
-            st.button("שמור ✅")
+        if st.button("צרי חשבון חינם"):
+            # הקישור לטופס שלך (מעובד לשליחה אוטומטית)
+            form_url = "https://docs.google.com/forms/d/e/1FAIpQLSdWPISX09Kj4Z2oQFSC6smC5KtXm1iVvSrc_5nxvvsFx6hX7Q/formResponse"
+            
+            # ה-IDs שהוצאנו מהלינק שלך
+            payload = {
+                "entry.855862094": new_mail, # שדה האימייל
+                "entry.1847739029": new_pass  # שדה הסיסמה
+            }
+            
+            try:
+                requests.post(form_url, data=payload)
+                st.balloons()
+                st.success(f"מנכ\"לית, {new_mail} נרשם בטבלה שלך בהצלחה!")
+            except:
+                st.error("הייתה בעיה קטנה בשליחה לטבלה.")
 
-        elif page == "🔗 קישור ללקוחות":
-            st.header("הקישור שלך 🌐")
-            st.code("https://YOUR-APP.streamlit.app/?view=customer")
+# --- 6. מרכז הבקרה (אחרי התחברות) ---
+else:
+    with st.sidebar:
+        st.markdown("### מנכ\"לית מיי 👑")
+        page = st.radio("ניווט:", ["✨ דף הבית", "🚀 סוכן שיווק", "🏢 הגדרות עסק", "🔗 קישור ללקוחות"])
+        if st.button("התנתקות"):
+            st.session_state.logged_in = False
+            st.rerun()
+
+    if page == "✨ דף הבית":
+        st.markdown("<div class='magic-title'>מרכז הבקרה</div>", unsafe_allow_html=True)
+        st.write("המערכת מחוברת ומוכנה לעבודה!")
+        
+    elif page == "🚀 סוכן שיווק":
+        st.header("סוכן שיווק AI")
+        task = st.text_area("על מה לכתוב פוסט?")
+        if st.button("צור תוכן ⚡"):
+            res = client.chat.completions.create(model="llama-3.3-70b-versatile", messages=[{"role":"user","content":f"Write marketing for: {task} in Hebrew"}])
+            st.write(res.choices[0].message.content)
+
+    elif page == "🏢 הגדרות עסק":
+        st.header("הגדרות עסק")
+        st.session_state.biz_info = st.text_area("מידע שהצ'אטבוט יכיר:", value=st.session_state.biz_info)
+        st.button("שמור ✅")
+
+    elif page == "🔗 קישור ללקוחות":
+        st.header("הקישור שלך 🌐")
+        st.code("https://YOUR-APP.streamlit.app/?view=customer")
