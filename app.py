@@ -56,45 +56,49 @@ elif st.session_state.page == "dashboard":
     st.markdown("<div class='brand-title' style='font-size:30px;'>DASHBOARD</div>", unsafe_allow_html=True)
     st.write(f"WELCOME, {st.session_state.user_email.upper()}")
     
-    topic = st.text_area("על מה הסוכנות תעבוד היום?", placeholder="למשל: בושם יוקרתי, שעון, שמלה...")
+    topic = st.text_area("על מה הסוכנות תעבוד היום?", placeholder="תארי את המוצר (למשל: בושם יוקרתי, שעון זהב)...")
     
     if st.button("GENERATE MAGIC ✨"):
         if topic:
-            with st.spinner("AI IS GENERATING..."):
-                # א. יצירת טקסט
+            with st.spinner("סוכנות AI מייצרת תוכן ותמונה..."):
+                # א. יצירת הטקסט
                 res = client.chat.completions.create(
                     model="llama-3.3-70b-versatile",
-                    messages=[{"role":"system","content":"אתה סוכן AI יוקרתי. כתוב פוסט קצר בעברית."},
+                    messages=[{"role":"system","content":"אתה סוכן AI יוקרתי לעסקים. כתוב פוסט שיווקי קצר בעברית."},
                               {"role":"user","content":topic}]
                 )
                 st.session_state.last_text = res.choices[0].message.content
                 
-                # ב. תרגום הנושא לאנגלית לחיפוש תמונה מדויק
+                # ב. תרגום שקט לאנגלית כדי שה-AI יצייר מדויק
                 trans = client.chat.completions.create(
                     model="llama-3.1-8b-instant",
-                    messages=[{"role":"system","content":"Translate the topic to 2 English keywords. Only keywords."},
+                    messages=[{"role":"system","content":"Translate the topic to English keywords for AI image generation. Only keywords."},
                               {"role":"user","content":topic}]
                 )
-                kw = trans.choices[0].message.content.strip().replace(" ", ",")
+                en_kw = trans.choices[0].message.content.strip().replace(" ", ",")
                 
-                # ג. משיכת תמונה משרת יציב (Unsplash)
-                # שימוש בכתובת שתמיד עובדת ומביאה תמונה רלוונטית
-                st.session_state.last_image_url = f"https://images.unsplash.com/photo-1?auto=format&fit=crop&w=800&q=80&keywords=luxury,{kw}&sig={int(time.time())}"
-                
-                # גיבוי: אם הכתובת מעל לא נטענת, נשתמש בפורמט הפשוט
-                st.session_state.last_image_url = f"https://source.unsplash.com/featured/800x800?luxury,{kw}"
+                # ג. יצירת התמונה (השיטה המנצחת)
+                seed = int(time.time())
+                # הוספנו מילות מפתח שמבטיחות מראה של צילום מוצר מקצועי
+                prompt = f"professional-product-photography,luxury,highly-detailed,{en_kw}"
+                st.session_state.last_image_url = f"https://pollinations.ai/p/{urllib.parse.quote(prompt)}?width=1024&height=1024&seed={seed}&model=flux"
                 
                 st.session_state.magic_done = True
         else:
             st.warning("PLEASE ENTER A TOPIC")
 
     if st.session_state.magic_done:
-        # הצגת התמונה
-        st.image(st.session_state.last_image_url, use_container_width=True)
+        # הצגת התמונה - השתמשתי בפורמט HTML כדי לעקוף חסימות
+        st.markdown(f'''
+            <div style="border: 2px solid #eee; padding: 5px; background: #fff;">
+                <img src="{st.session_state.last_image_url}" style="width:100%; display:block;">
+            </div>
+        ''', unsafe_allow_html=True)
+        
         st.info(st.session_state.last_text)
         
         wa_txt = urllib.parse.quote(st.session_state.last_text)
-        st.markdown(f'<a href="https://wa.me/?text={wa_txt}" target="_blank"><button style="width:100%; background-color:#25D366; color:white; border:none; height:50px; cursor:pointer;">SEND TO WHATSAPP 📱</button></a>', unsafe_allow_html=True)
+        st.markdown(f'<a href="https://wa.me/?text={wa_txt}" target="_blank"><button style="width:100%; background-color:#25D366; color:white; border:none; height:50px; cursor:pointer; margin-top:10px;">SEND TO WHATSAPP 📱</button></a>', unsafe_allow_html=True)
 
     if st.button("LOG OUT"):
         st.session_state.page = "auth"
