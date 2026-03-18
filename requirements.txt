@@ -1,4 +1,2 @@
-streamlit
 groq
 st-gsheets-connection
-duckduckgo-search
