@@ -2,9 +2,10 @@ import streamlit as st
 import requests
 import urllib.parse
 import time
+import base64
 from groq import Groq
 
-# --- 1. הגדרות מערכת ---
+# --- הגדרות מערכת ---
 st.set_page_config(page_title="MEIROM MAGIC", page_icon="🖤", layout="centered")
 
 try:
@@ -13,24 +14,22 @@ except:
     st.error("Missing API Key")
     st.stop()
 
-# --- 2. עיצוב סוכנות AI יוקרתית ---
+# --- עיצוב LUXE ---
 st.markdown("""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Assistant:wght@200;400;700&display=swap');
     html, body, [class*="st-"] { font-family: 'Assistant', sans-serif; direction: rtl; text-align: center; background-color: #fff; color: #000; }
     .brand-title { font-size: 50px; font-weight: 700; margin-top: 50px; letter-spacing: 5px; background: linear-gradient(45deg, #000, #d4af37, #000); -webkit-background-clip: text; -webkit-text-fill-color: transparent; text-transform: uppercase; }
     .brand-tagline { font-size: 14px; letter-spacing: 5px; color: #d4af37; margin-bottom: 50px; text-transform: uppercase; }
-    .stButton>button { background-color: #000 !important; color: #fff !important; border-radius: 0px !important; height: 60px !important; width: 100% !important; border: none !important; font-size: 17px; margin-top: 20px; transition: 0.3s; }
+    .stButton>button { background-color: #000 !important; color: #fff !important; border-radius: 0px !important; height: 60px !important; width: 100% !important; border: none !important; font-size: 17px; margin-top: 20px; }
     .stButton>button:hover { background-color: #d4af37 !important; }
-    input { background-color: transparent !important; border: none !important; border-bottom: 2px solid #eee !important; text-align: center !important; font-size: 20px !important; padding: 10px 0 !important; }
-    textarea { text-align: right !important; border: 1px solid #eee !important; border-radius: 0px !important; font-size: 18px !important; }
 </style>
 """, unsafe_allow_html=True)
 
 if 'page' not in st.session_state: st.session_state.page = "auth"
 if 'magic_done' not in st.session_state: st.session_state.magic_done = False
 
-# --- 3. דף כניסה והרשמה ---
+# --- דף כניסה והרשמה ---
 if st.session_state.page == "auth":
     st.markdown("<div class='brand-title'>MEIROM MAGIC</div><div class='brand-tagline'>AI BUSINESS AGENCY</div>", unsafe_allow_html=True)
     t1, t2 = st.tabs(["כניסה", "הרשמה"])
@@ -49,52 +48,48 @@ if st.session_state.page == "auth":
             if re:
                 requests.post("https://docs.google.com/forms/d/e/1FAIpQLSdWPISX09Kj4Z2oQFSC6smC5KtXm1iVvSrc_5nxvvsFx6hX7Q/formResponse", 
                               data={"entry.855862094": re, "entry.1847739029": rb})
-                st.success("SUCCESS! GO TO LOGIN.")
+                st.success("SUCCESS!")
 
-# --- 4. דף עבודה ---
+# --- דף עבודה ---
 elif st.session_state.page == "dashboard":
     st.markdown("<div class='brand-title' style='font-size:30px;'>DASHBOARD</div>", unsafe_allow_html=True)
-    st.write(f"WELCOME, {st.session_state.user_email.upper()}")
     
-    topic = st.text_area("על מה הסוכנות תעבוד היום?", placeholder="תארי את המוצר (למשל: בושם יוקרתי, שעון זהב)...")
+    topic = st.text_area("על מה הסוכנות תעבוד היום?", placeholder="למשל: בושם יוקרתי...")
     
     if st.button("GENERATE MAGIC ✨"):
         if topic:
-            with st.spinner("סוכנות AI מייצרת תוכן ותמונה..."):
-                # א. יצירת הטקסט
+            with st.spinner("סוכנות AI מייצרת הכל..."):
+                # 1. טקסט
                 res = client.chat.completions.create(
                     model="llama-3.3-70b-versatile",
-                    messages=[{"role":"system","content":"אתה סוכן AI יוקרתי לעסקים. כתוב פוסט שיווקי קצר בעברית."},
+                    messages=[{"role":"system","content":"אתה סוכן AI יוקרתי. כתוב פוסט קצר בעברית."},
                               {"role":"user","content":topic}]
                 )
                 st.session_state.last_text = res.choices[0].message.content
                 
-                # ב. תרגום שקט לאנגלית כדי שה-AI יצייר מדויק
+                # 2. תרגום וקבלת תמונה (הזרקת Base64)
                 trans = client.chat.completions.create(
                     model="llama-3.1-8b-instant",
-                    messages=[{"role":"system","content":"Translate the topic to English keywords for AI image generation. Only keywords."},
+                    messages=[{"role":"system","content":"Translate to English keywords for AI image."},
                               {"role":"user","content":topic}]
                 )
-                en_kw = trans.choices[0].message.content.strip().replace(" ", ",")
+                kw = trans.choices[0].message.content.strip().replace(" ", ",")
+                img_url = f"https://pollinations.ai/p/professional-product-photography,luxury,{kw}?width=512&height=512&nologo=true"
                 
-                # ג. יצירת התמונה (השיטה המנצחת)
-                seed = int(time.time())
-                # הוספנו מילות מפתח שמבטיחות מראה של צילום מוצר מקצועי
-                prompt = f"professional-product-photography,luxury,highly-detailed,{en_kw}"
-                st.session_state.last_image_url = f"https://pollinations.ai/p/{urllib.parse.quote(prompt)}?width=1024&height=1024&seed={seed}&model=flux"
-                
-                st.session_state.magic_done = True
+                # הורדת התמונה והפיכתה לקוד
+                try:
+                    img_data = requests.get(img_url).content
+                    b64_img = base64.b64encode(img_data).decode()
+                    st.session_state.img_html = f'<img src="data:image/jpeg;base64,{b64_img}" style="width:100%; border-radius:10px;">'
+                    st.session_state.magic_done = True
+                except:
+                    st.error("משהו השתבש בטעינה.")
         else:
-            st.warning("PLEASE ENTER A TOPIC")
+            st.warning("אנא הכניסי נושא")
 
     if st.session_state.magic_done:
-        # הצגת התמונה - השתמשתי בפורמט HTML כדי לעקוף חסימות
-        st.markdown(f'''
-            <div style="border: 2px solid #eee; padding: 5px; background: #fff;">
-                <img src="{st.session_state.last_image_url}" style="width:100%; display:block;">
-            </div>
-        ''', unsafe_allow_html=True)
-        
+        # הצגת התמונה המוזרקת
+        st.markdown(st.session_state.img_html, unsafe_allow_html=True)
         st.info(st.session_state.last_text)
         
         wa_txt = urllib.parse.quote(st.session_state.last_text)
