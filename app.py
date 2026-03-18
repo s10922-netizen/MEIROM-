@@ -1,9 +1,10 @@
 import streamlit as st
 import requests
 import urllib.parse
+import time
 from groq import Groq
 
-# --- 1. הגדרות מערכת ---
+# --- הגדרות מערכת ---
 st.set_page_config(page_title="MEIROM MAGIC", page_icon="🖤", layout="centered")
 
 try:
@@ -12,29 +13,24 @@ except:
     st.error("Missing API Key")
     st.stop()
 
-# --- 2. עיצוב סוכנות LUXE ---
+# --- עיצוב סוכנות AI יוקרתית ---
 st.markdown("""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Assistant:wght@200;400;700&display=swap');
     html, body, [class*="st-"] { font-family: 'Assistant', sans-serif; direction: rtl; text-align: center; background-color: #fff; color: #000; }
     .brand-title { font-size: 50px; font-weight: 700; margin-top: 50px; letter-spacing: 5px; background: linear-gradient(45deg, #000, #d4af37, #000); -webkit-background-clip: text; -webkit-text-fill-color: transparent; text-transform: uppercase; }
     .brand-tagline { font-size: 14px; letter-spacing: 5px; color: #d4af37; margin-bottom: 50px; text-transform: uppercase; }
-    .stButton>button { background-color: #000 !important; color: #fff !important; border-radius: 0px !important; height: 60px !important; width: 100% !important; border: none !important; font-size: 17px; margin-top: 20px; }
+    .stButton>button { background-color: #000 !important; color: #fff !important; border-radius: 0px !important; height: 60px !important; width: 100% !important; border: none !important; font-size: 17px; margin-top: 20px; transition: 0.3s; }
     .stButton>button:hover { background-color: #d4af37 !important; }
     input { background-color: transparent !important; border: none !important; border-bottom: 2px solid #eee !important; text-align: center !important; font-size: 20px !important; padding: 10px 0 !important; }
-    /* עיצוב ה"תמונה" החדשה */
-    .icon-box { 
-        width: 150px; height: 150px; background: #fdfaf0; border: 2px solid #d4af37; 
-        border-radius: 50%; margin: 20px auto; display: flex; align-items: center; 
-        justify-content: center; font-size: 70px; box-shadow: 0 10px 20px rgba(212,175,55,0.1);
-    }
+    textarea { text-align: right !important; border: 1px solid #eee !important; border-radius: 0px !important; }
 </style>
 """, unsafe_allow_html=True)
 
 if 'page' not in st.session_state: st.session_state.page = "auth"
 if 'magic_done' not in st.session_state: st.session_state.magic_done = False
 
-# --- 3. דף כניסה והרשמה (כל הפיצ'רים שלך נשמרים) ---
+# --- דף כניסה והרשמה ---
 if st.session_state.page == "auth":
     st.markdown("<div class='brand-title'>MEIROM MAGIC</div><div class='brand-tagline'>AI BUSINESS AGENCY</div>", unsafe_allow_html=True)
     t1, t2 = st.tabs(["כניסה", "הרשמה"])
@@ -55,40 +51,43 @@ if st.session_state.page == "auth":
                               data={"entry.855862094": re, "entry.1847739029": rb})
                 st.success("SUCCESS! GO TO LOGIN.")
 
-# --- 4. דף עבודה ---
+# --- דף עבודה (DASHBOARD) ---
 elif st.session_state.page == "dashboard":
     st.markdown("<div class='brand-title' style='font-size:30px;'>DASHBOARD</div>", unsafe_allow_html=True)
     st.write(f"WELCOME, {st.session_state.user_email.upper()}")
     
-    topic = st.text_area("על מה הסוכנות תעבוד היום?", placeholder="למשל: סוודר, בושם, נעליים...")
+    topic = st.text_area("על מה הסוכנות תעבוד היום?", placeholder="תארי את המוצר (למשל: בושם יוקרתי בבקבוק זהב)...")
     
     if st.button("GENERATE MAGIC ✨"):
         if topic:
-            with st.spinner("סוכנות AI מייצרת תוכן..."):
-                # א. יצירת הטקסט ב-Groq
+            with st.spinner("AI מצייר עבורך את התמונה וכותב תוכן..."):
+                # 1. יצירת הטקסט ב-Groq
                 res = client.chat.completions.create(
                     model="llama-3.3-70b-versatile",
-                    messages=[{"role":"system","content":"אתה סוכן AI יוקרתי לעסקים. כתוב פוסט שיווקי קצר בעברית."},
+                    messages=[{"role":"system","content":"אתה סוכן AI לעסקים. כתוב פוסט יוקרתי קצר בעברית."},
                               {"role":"user","content":topic}]
                 )
                 st.session_state.last_text = res.choices[0].message.content
                 
-                # ב. בחירת אייקון מתאים (הפתרון החינמי והחסין)
-                icon = "✨" # ברירת מחדל
-                if "סוודר" in topic or "בגד" in topic: icon = "🧶"
-                elif "בושם" in topic: icon = "🧴"
-                elif "שעון" in topic: icon = "⌚"
-                elif "נעל" in topic: icon = "👠"
-                elif "תכשיט" in topic or "זהב" in topic: icon = "💎"
+                # 2. תרגום הנושא לאנגלית (כדי שהציור יצא מדויק)
+                trans = client.chat.completions.create(
+                    model="llama-3.1-8b-instant",
+                    messages=[{"role":"system","content":"Translate the topic to 3 English keywords for AI image generation. Only keywords."},
+                              {"role":"user","content":topic}]
+                )
+                en_keywords = trans.choices[0].message.content.strip().replace(" ", ",")
                 
-                st.session_state.last_icon = icon
+                # 3. יצירת התמונה (מנוע Stable Diffusion דרך Pollinations)
+                # שימוש בפורמט שמכריח את ה-AI לצייר מוצר (Product Photography)
+                seed = int(time.time())
+                st.session_state.last_image_url = f"https://image.pollinations.ai/prompt/high-end-product-photography,luxury,elegant,{en_keywords}?width=1024&height=1024&nologo=true&seed={seed}"
                 st.session_state.magic_done = True
         else:
             st.warning("אנא הכניסי נושא")
 
     if st.session_state.magic_done:
-        # הצגת ה"תמונה" (האייקון המעוצב)
-        st.markdown(f'<div class="icon-box">{st.session_state.last_icon}</div>', unsafe_allow_html=True)
+        # הצגת התמונה (בשיטה שמונעת איקסים שבורים)
+        st.image(st.session_state.last_image_url, use_container_width=True, caption="נוצר על ידי MEIROM MAGIC AI")
         
         st.info(st.session_state.last_text)
         
