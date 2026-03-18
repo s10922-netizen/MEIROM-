@@ -9,86 +9,128 @@ st.set_page_config(page_title="MEIROM MAGIC", page_icon="🖤", layout="centered
 try:
     client = Groq(api_key=st.secrets["GROQ_API_KEY"])
 except:
-    st.error("Missing Groq API Key in Secrets")
+    st.error("Missing Groq API Key")
     st.stop()
 
-# --- עיצוב ZARA LUXE ---
+# --- העיצוב המקורי והמדויק של MEIROM MAGIC ---
 st.markdown("""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Assistant:wght@200;300;400;700&display=swap');
-    html, body, [class*="st-"] { 
-        font-family: 'Assistant', sans-serif; 
-        direction: rtl; 
-        text-align: center; 
-        background-color: #fff; 
-        color: #000; 
+    
+    html, body, [class*="st-"] {
+        font-family: 'Assistant', sans-serif;
+        direction: rtl;
+        text-align: center;
+        background-color: #ffffff;
+        color: #000000;
     }
-    .brand-title { font-size: 40px; font-weight: 700; margin-top: 30px; text-transform: uppercase; letter-spacing: 2px; }
-    .stButton>button { 
-        background-color: #000; color: #fff; border-radius: 0px; 
-        height: 55px; width: 100%; border: none; font-size: 16px;
-        transition: 0.3s;
+    
+    .brand-title {
+        font-size: 45px;
+        font-weight: 700;
+        margin-top: 50px;
+        color: #000;
+        text-transform: uppercase;
+        letter-spacing: 3px;
     }
-    .stButton>button:hover { background-color: #333; color: #fff; }
-    textarea { text-align: right !important; border-radius: 0px !important; border: 1px solid #eee !important; }
+    
+    .brand-tagline {
+        font-size: 13px;
+        letter-spacing: 4px;
+        color: #888;
+        margin-bottom: 50px;
+        text-transform: uppercase;
+    }
+
+    .stButton>button {
+        background-color: #000 !important;
+        color: #fff !important;
+        border-radius: 0px !important;
+        height: 55px !important;
+        width: 100% !important;
+        border: none !important;
+        font-size: 16px !important;
+        font-weight: 300 !important;
+        letter-spacing: 1px !important;
+        margin-top: 20px !important;
+    }
+    
+    /* עיצוב שדות קלט */
+    input, textarea {
+        background-color: transparent !important;
+        border: none !important;
+        border-bottom: 1px solid #eee !important;
+        text-align: center !important;
+        font-size: 18px !important;
+        border-radius: 0px !important;
+        color: #000 !important;
+    }
+    
+    input:focus, textarea:focus {
+        border-bottom: 1px solid #000 !important;
+        box-shadow: none !important;
+    }
+
+    .stInfo {
+        background-color: #f9f9f9 !important;
+        border: none !important;
+        color: #000 !important;
+        border-radius: 0px !important;
+        text-align: right !important;
+    }
 </style>
 """, unsafe_allow_html=True)
 
 # ניהול מצבי דפים
-if 'page' not in st.session_state:
-    st.session_state.page = "auth"
-if 'magic_done' not in st.session_state:
-    st.session_state.magic_done = False
+if 'page' not in st.session_state: st.session_state.page = "auth"
+if 'magic_done' not in st.session_state: st.session_state.magic_done = False
 
-# --- דף כניסה ---
+# --- דף כניסה (העיצוב המקורי) ---
 if st.session_state.page == "auth":
-    st.markdown("<div class='brand-title'>MEIROM MAGIC</div>", unsafe_allow_html=True)
-    m = st.text_input("מייל כניסה", key="login_m").strip().lower()
-    if st.button("כניסה למערכת"):
+    st.markdown("<div class='brand-title'>MEIROM MAGIC</div><div class='brand-tagline'>Creative AI Systems</div>", unsafe_allow_html=True)
+    m = st.text_input("ENTER EMAIL", key="login_m").strip().lower()
+    if st.button("LOG IN"):
         st.session_state.user_email = m
         st.session_state.page = "dashboard"
         st.rerun()
 
-# --- דף העבודה (Dashboard) ---
+# --- דף עבודה (העיצוב המקורי) ---
 elif st.session_state.page == "dashboard":
-    st.markdown("<div class='brand-title' style='font-size:22px;'>MEIROM MAGIC SYSTEM</div>", unsafe_allow_html=True)
-    st.write(f"שלום, {st.session_state.user_email}")
+    st.markdown("<div class='brand-title' style='font-size:28px;'>DASHBOARD</div>", unsafe_allow_html=True)
+    st.markdown(f"<div style='letter-spacing:2px; color:#888; margin-bottom:30px;'>WELCOME, {st.session_state.user_email.upper()}</div>", unsafe_allow_html=True)
     
-    topic = st.text_area("על מה נעבוד היום? (ה-AI יעשה את העבודה השחורה)", 
-                         placeholder="למשל: פוסט לאינסטגרם על קולקציה חדשה של שמלות שחורות...")
+    topic = st.text_area("מה הנושא של הפוסט היום?", placeholder="כתבי כאן...")
     
-    if st.button("ייצור קסם (טקסט + תמונה) 🪄"):
+    if st.button("GENERATE MAGIC ✨"):
         if topic:
-            with st.spinner("מייצר פוסט ותמונה בחינם..."):
-                # 1. ייצור טקסט ב-Groq
+            with st.spinner("CREATING..."):
+                # 1. טקסט
                 res = client.chat.completions.create(
                     model="llama-3.3-70b-versatile",
                     messages=[
-                        {"role":"system","content":"אתה סוכן תוכן יוקרתי. כתוב פוסט לאינסטגרם בעברית בסטייל ZARA. קצר, חד ומושך."},
+                        {"role":"system","content":"אתה סוכן תוכן יוקרתי. כתוב פוסט לאינסטגרם בעברית בסטייל ZARA. קצר וקולע."},
                         {"role":"user","content":topic}
                     ]
                 )
                 st.session_state.last_text = res.choices[0].message.content
                 
-                # 2. ייצור תמונה בחינם (Pollinations)
+                # 2. תמונה (Pollinations)
                 clean_topic = topic.replace(" ", "%20")
-                img_url = f"https://image.pollinations.ai/prompt/{clean_topic}?width=1024&height=1024&nologo=true"
-                st.session_state.last_image_url = img_url
+                st.session_state.last_image_url = f"https://image.pollinations.ai/prompt/{clean_topic}?width=1024&height=1024&nologo=true"
                 st.session_state.magic_done = True
         else:
-            st.warning("אנא כתבי נושא")
+            st.warning("PLEASE ENTER A TOPIC")
 
-    # הצגת התוצאות
     if st.session_state.magic_done:
-        st.image(st.session_state.last_image_url, caption="התמונה שה-AI ייצר עבור העסק")
+        st.image(st.session_state.last_image_url)
         st.info(st.session_state.last_text)
         
-        # כפתור וואטסאפ
+        # כפתור וואטסאפ (מעוצב כחלק מהמערכת)
         text_encoded = requests.utils.quote(st.session_state.last_text)
         wa_url = f"https://wa.me/?text={text_encoded}"
-        st.markdown(f'<a href="{wa_url}" target="_blank"><button style="width:100%; background-color:#25D366; color:white; border:none; height:45px; cursor:pointer;">שלח לוואטסאפ של העסק 📱</button></a>', unsafe_allow_html=True)
+        st.markdown(f'<a href="{wa_url}" target="_blank"><button style="width:100%; background-color:#25D366; color:white; border:none; height:50px; cursor:pointer; margin-top:10px;">SEND TO WHATSAPP 📱</button></a>', unsafe_allow_html=True)
 
-    if st.button("התנתקות"):
+    if st.button("LOG OUT"):
         st.session_state.page = "auth"
         st.session_state.magic_done = False
         st.rerun()
