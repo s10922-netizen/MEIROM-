@@ -1,7 +1,7 @@
 import streamlit as st
 import requests
 import urllib.parse
-import random
+import time
 from groq import Groq
 
 # --- הגדרות מערכת ---
@@ -17,13 +17,20 @@ except:
 st.markdown("""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Assistant:wght@200;300;400;600;700&display=swap');
-    html, body, [class*="st-"] { font-family: 'Assistant', sans-serif; direction: rtl; text-align: center; background-color: #ffffff; color: #000; }
+    html, body, [class*="st-"] { 
+        font-family: 'Assistant', sans-serif; 
+        direction: rtl; 
+        text-align: center; 
+        background-color: #ffffff; 
+        color: #000; 
+    }
     .brand-title { font-size: 55px; font-weight: 700; margin-top: 40px; letter-spacing: 5px; background: linear-gradient(45deg, #000, #d4af37, #000); -webkit-background-clip: text; -webkit-text-fill-color: transparent; text-transform: uppercase; }
     .brand-tagline { font-size: 14px; letter-spacing: 6px; color: #d4af37; margin-bottom: 50px; text-transform: uppercase; }
-    .stButton>button { background-color: #000 !important; color: #fff !important; border-radius: 0px !important; height: 60px !important; width: 100% !important; border: 1px solid #000 !important; font-size: 18px !important; letter-spacing: 2px !important; transition: 0.4s; }
+    .stButton>button { background-color: #000 !important; color: #fff !important; border-radius: 0px !important; height: 60px !important; width: 100% !important; border: 1px solid #000 !important; font-size: 18px !important; letter-spacing: 2px !important; transition: 0.3s; }
     .stButton>button:hover { background-color: #d4af37 !important; border-color: #d4af37 !important; }
     input { border: none !important; border-bottom: 1px solid #ddd !important; background-color: transparent !important; font-size: 20px !important; text-align: center !important; padding: 10px 0 !important; color: #000 !important; }
     input:focus { border-bottom: 2px solid #d4af37 !important; }
+    textarea { text-align: right !important; border: 1px solid #eee !important; font-size: 18px !important; border-radius: 0px !important; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -32,7 +39,7 @@ if 'magic_done' not in st.session_state: st.session_state.magic_done = False
 
 # --- דף כניסה והרשמה ---
 if st.session_state.page == "auth":
-    st.markdown("<div class='brand-title'>MEIROM MAGIC</div><div class='brand-tagline'>AI BUSINESS AGENCY</div>", unsafe_allow_html=True)
+    st.markdown("<div class='brand-title'>MEIROM MAGIC</div><div class='brand-tagline'>Creative AI Solutions</div>", unsafe_allow_html=True)
     t1, t2 = st.tabs(["כניסה", "הרשמה"])
     
     with t1:
@@ -59,28 +66,35 @@ elif st.session_state.page == "dashboard":
     st.markdown("<div class='brand-title' style='font-size:35px;'>DASHBOARD</div>", unsafe_allow_html=True)
     st.write(f"WELCOME, {st.session_state.user_email.upper()}")
     
-    topic = st.text_area("על מה הסוכנות תעבוד היום?", placeholder="תארי את המשימה השחורה...")
+    topic = st.text_area("על מה הסוכנות תעבוד היום?", placeholder="תארי את המשימה (למשל: סוודר קשמיר שחור)...")
     
     if st.button("GENERATE MAGIC ✨"):
         if topic:
-            with st.spinner("מעבד נתונים..."):
+            with st.spinner("מעבד נתונים ומוצא תמונה..."):
                 # 1. טקסט
                 res = client.chat.completions.create(
                     model="llama-3.3-70b-versatile",
-                    messages=[{"role":"system","content":"אתה סוכן AI יוקרתי לעסקים. כתוב תוכן שיווקי חד וקצר."}, {"role":"user","content":topic}]
+                    messages=[{"role":"system","content":"אתה סוכן תוכן יוקרתי בסטייל ZARA לעסקים. כתוב תוכן שיווקי חד וקצר."}, {"role":"user","content":topic}]
                 )
                 st.session_state.last_text = res.choices[0].message.content
                 
-                # 2. תמונה - שיטה חדשה (Picsum)
-                # אנחנו משתמשים במספר רנדומלי כדי להבטיח תמונה שתמיד עובדת
-                img_id = random.randint(1, 1000)
-                st.session_state.last_image_url = f"https://picsum.photos/seed/{img_id}/1024/1024"
+                # 2. תרגום הבקשה לאנגלית לטובת חיפוש מדויק
+                trans_res = client.chat.completions.create(
+                    model="llama3-8b-8192", # מודל מהיר לתרגום
+                    messages=[{"role":"system","content":"Translate the following topic to English for a search query. Only output the English translation."}, {"role":"user","content":topic}]
+                )
+                topic_en = trans_res.choices[0].message.content.strip().lower()
+                
+                # 3. תמונה - שיטה מדויקת (Unsplash)
+                # אנחנו משתמשים במילת המפתח המתורגמת כדי למצוא תמונה קשורה
+                # הוספתי seed כדי למנוע טעינה של תמונה ישנה
+                st.session_state.last_image_url = f"https://source.unsplash.com/featured/1024x1024?luxury,fashion,minimalist,{urllib.parse.quote(topic_en)}&sig={int(time.time())}"
                 st.session_state.magic_done = True
         else:
             st.warning("אנא כתבי נושא")
 
     if st.session_state.magic_done:
-        # הצגת התמונה
+        # הצגת התמונה - הפעם היא תהיה קשורה!
         st.image(st.session_state.last_image_url, use_container_width=True)
         st.info(st.session_state.last_text)
         
