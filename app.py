@@ -16,16 +16,19 @@ except:
 # --- 2. פונקציות ליבה ---
 def get_users_df():
     try:
+        # הוספת פרמטר זמן כדי למנוע טעינת נתונים ישנים מהדפדפן
         url = f"{SHEET_CSV_URL}&refresh={pd.Timestamp.now().timestamp()}"
         return pd.read_csv(url)
     except: return pd.DataFrame()
 
 def save_to_google(email, data_dict):
     url = "https://docs.google.com/forms/d/e/1FAIpQLSdWPISX09Kj4Z2oQFSC6smC5KtXm1iVvSrc_5nxvvsFx6hX7Q/formResponse"
-    # שומרים את כל פרטי העסק והחבילה בשדה המידע
+    # שמירת כל המידע בשורה אחת
     info = " | ".join([f"{k}: {v}" for k, v in data_dict.items()])
     payload = {"entry.855862094": email, "entry.1847739029": info}
-    requests.post(url, data=payload)
+    try:
+        requests.post(url, data=payload)
+    except: pass
 
 # --- 3. עיצוב CSS ---
 st.markdown("""
@@ -38,107 +41,98 @@ st.markdown("""
         animation: shine 3s linear infinite; font-size: 50px; font-weight: bold; text-align: center;
     }
     @keyframes shine { to { background-position: 200% center; } }
-    .package-card { border: 2px solid #7c3aed; border-radius: 15px; padding: 20px; text-align: center; background: white; margin-bottom: 20px; }
-    .stButton>button { background: linear-gradient(45deg, #7c3aed, #ec4899); color: white; border-radius: 20px; border: none; font-weight: bold; }
+    .stButton>button { background: linear-gradient(45deg, #7c3aed, #ec4899); color: white; border-radius: 20px; width: 100%; font-weight: bold; }
 </style>
 """, unsafe_allow_html=True)
 
 # --- 4. ניהול מצבי עמוד ---
 if 'page' not in st.session_state: st.session_state.page = "auth"
-if 'biz_data' not in st.session_state: st.session_state.biz_data = {}
 if 'user_email' not in st.session_state: st.session_state.user_email = ""
+if 'biz_data' not in st.session_state: st.session_state.biz_data = {}
 
 # --- 5. ניווט דפים ---
 
 # דף כניסה והרשמה
 if st.session_state.page == "auth":
     st.markdown("<div class='magic-title'>Business OS</div>", unsafe_allow_html=True)
-    t1, t2 = st.tabs(["🔑 כניסה למערכת", "📝 הקמת עסק חדש"])
+    t1, t2 = st.tabs(["🔑 כניסה", "📝 הרשמה"])
     
     with t1:
-        l_mail = st.text_input("אימייל", key="login_m").strip().lower()
-        l_pass = st.text_input("סיסמה", type="password", key="login_p")
-        if st.button("כניסה 🚀"):
+        l_mail = st.text_input("אימייל", key="l_m").strip().lower()
+        l_pass = st.text_input("סיסמה", type="password", key="l_p")
+        if st.button("כניסה למערכת 🚀"):
             df = get_users_df()
-            # מחפש את המייל והסיסמה בתוך הטקסט של הטבלה
-            all_data = df.astype(str).apply(lambda x: x.str.strip().str.lower()).values.flatten()
-            if l_mail in all_data and l_pass in all_data:
+            # מחפש את המייל והסיסמה בטקסט הגולמי של הטבלה
+            all_text = df.astype(str).apply(lambda x: x.str.lower()).values.flatten()
+            if l_mail in all_text and l_pass in all_text:
                 st.session_state.user_email = l_mail
                 st.session_state.page = "dashboard"
                 st.rerun()
-            else: st.error("פרטים לא נכונים או שגוגל טרם עדכן את הטבלה (לוקח 5 דקות).")
+            else:
+                st.error("הפרטים לא נמצאו. אם נרשמת הרגע - המתיני 5 דקות לעדכון גוגל.")
 
     with t2:
-        r_mail = st.text_input("מייל לעסק", key="reg_m")
-        r_pass = st.text_input("סיסמה", type="password", key="reg_p")
-        if st.button("המשך להגדרת העסק"):
+        r_mail = st.text_input("מייל לעסק", key="r_m").strip().lower()
+        r_pass = st.text_input("סיסמה חדשה", type="password", key="r_p")
+        if st.button("המשך להקמת העסק ✨"):
             if r_mail and r_pass:
                 st.session_state.temp_mail = r_mail
                 st.session_state.temp_pass = r_pass
                 st.session_state.page = "onboarding"
                 st.rerun()
 
-# דף הגדרת עסק (Onboarding)
+# דף אונבורדינג (פירוט העסק)
 elif st.session_state.page == "onboarding":
     st.header("ספרי ל-AI על העסק שלך 🖋️")
-    b_name = st.text_input("שם העסק", placeholder="למשל: מיירום מג'יק")
-    b_desc = st.text_area("מה העסק עושה?", placeholder="תיאור עבור ה-AI...")
-    b_target = st.text_input("מי קהל היעד?", placeholder="מי הלקוחות האידיאליים?")
-    
-    if st.button("שמור והמשך לבחירת חבילה"):
-        st.session_state.biz_data = {"name": b_name, "desc": b_desc, "target": b_target}
+    name = st.text_input("שם העסק")
+    desc = st.text_area("מה העסק עושה? (פירוט עבור ה-AI)")
+    target = st.text_input("מי הלקוחות?")
+    if st.button("שמור והמשך"):
+        st.session_state.biz_data = {"name": name, "desc": desc, "target": target}
         st.session_state.page = "packages"
         st.rerun()
 
 # דף חבילות
 elif st.session_state.page == "packages":
     st.header("בחרי מסלול")
-    c1, c2 = st.columns(2)
-    with c1:
-        st.markdown("<div class='package-card'><h3>🌟 VIP</h3><p>AI ללא הגבלה</p></div>", unsafe_allow_html=True)
-        if st.button("בחרתי VIP"):
-            save_to_google(st.session_state.temp_mail, {**st.session_state.biz_data, "plan": "VIP", "pass": st.session_state.temp_pass})
-            st.session_state.user_email = st.session_state.temp_mail # כניסה מיידית
-            st.session_state.page = "dashboard"
-            st.rerun()
-    with c2:
-        st.markdown("<div class='package-card'><h3>🚀 Basic</h3><p>כלים בסיסיים</p></div>", unsafe_allow_html=True)
-        if st.button("בחרתי בסיסי"):
-            save_to_google(st.session_state.temp_mail, {**st.session_state.biz_data, "plan": "Basic", "pass": st.session_state.temp_pass})
-            st.session_state.user_email = st.session_state.temp_mail # כניסה מיידית
-            st.session_state.page = "dashboard"
-            st.rerun()
+    if st.button("מסלול פרימיום 🌟"):
+        # שליחה לגוגל
+        final_data = {**st.session_state.biz_data, "plan": "Premium", "pass": st.session_state.temp_pass}
+        save_to_google(st.session_state.temp_mail, final_data)
+        # כניסה מיידית בלי לחכות לטבלה!
+        st.session_state.user_email = st.session_state.temp_mail
+        st.session_state.page = "dashboard"
+        st.rerun()
 
 # מרכז הבקרה (הפורטל)
 elif st.session_state.page == "dashboard":
     with st.sidebar:
-        st.title("Control Center")
-        menu = st.sidebar.radio("תפריט", ["🏠 דף הבית", "✍️ סוכן תוכן AI", "💬 צ'אט שירות", "👥 ניהול לקוחות (למנהלת)"])
+        st.write(f"שלום, {st.session_state.user_email}")
+        menu = st.radio("תפריט", ["🏠 בית", "✍️ סוכן תוכן AI", "💬 צ'אט שירות", "📊 ניהול (מנהלת)"])
         if st.button("התנתקות"):
             st.session_state.page = "auth"
             st.rerun()
 
-    if menu == "🏠 דף הבית":
-        st.markdown(f"## ברוך הבא, {st.session_state.user_email}")
-        st.info("כאן תמצאו את כל הכלים לניהול העסק.")
+    if menu == "🏠 בית":
+        st.markdown(f"## ברוך הבא לפורטל הניהול של {st.session_state.biz_data.get('name', 'העסק שלך')}")
+        st.success("המערכת פעילה!")
         
     elif menu == "✍️ סוכן תוכן AI":
-        st.header("יצירת פוסטים מותאמים אישית")
-        goal = st.text_input("מה המטרה של הפוסט?")
-        if st.button("צור תוכן"):
-            biz = st.session_state.get('biz_data', {})
-            prompt = f"כתוב פוסט לעסק בשם {biz.get('name')}. העסק עוסק ב: {biz.get('desc')}. קהל היעד הוא: {biz.get('target')}. מטרה: {goal}."
+        st.header("יצירת תוכן שיווקי")
+        goal = st.text_input("מה המטרה היום?")
+        if st.button("צור פוסט"):
+            biz = st.session_state.biz_data
+            prompt = f"כתוב פוסט לעסק {biz.get('name')} שעושה {biz.get('desc')} לקהל {biz.get('target')}. מטרה: {goal}."
             res = client.chat.completions.create(model="llama-3.3-70b-versatile", messages=[{"role":"user","content":prompt}])
             st.write(res.choices[0].message.content)
 
     elif menu == "💬 צ'אט שירות":
-        st.header("צ'אטבוט שירות לקוחות")
-        user_q = st.text_input("שאל משהו את נציג ה-AI שלכם...")
-        if user_q:
-            res = client.chat.completions.create(model="llama-3.3-70b-versatile", messages=[{"role":"system","content":"אתה נציג שירות אדיב."}, {"role":"user","content":user_q}])
-            st.chat_message("assistant").write(res.choices[0].message.content)
+        st.header("נציג שירות AI")
+        q = st.chat_input("שאלת לקוח...")
+        if q:
+            res = client.chat.completions.create(model="llama-3.3-70b-versatile", messages=[{"role":"system","content":"אתה נציג שירות אדיב."}, {"role":"user","content":q}])
+            st.write(res.choices[0].message.content)
 
-    elif menu == "👥 ניהול לקוחות (למנהלת)":
-        st.header("דאטה של כל המערכת")
-        df = get_users_df()
-        st.dataframe(df)
+    elif menu == "📊 ניהול (מנהלת)":
+        st.header("כל הלקוחות בטבלה")
+        st.dataframe(get_users_df())
