@@ -161,4 +161,29 @@ elif st.session_state.page == "dashboard":
 
         if st.button("חזרה לתפריט 🏠"):
             st.session_state.tool = "home"
+            import requests
+
+def upload_to_instagram(caption, image_url, instagram_account_id, access_token):
+    # שלב א': העלאת המדיה לשרת של פייסבוק
+    post_url = f"https://graph.facebook.com/v18.0/{instagram_account_id}/media"
+    payload = {
+        'image_url': image_url,
+        'caption': caption,
+        'access_token': access_token
+    }
+    response = requests.post(post_url, data=payload)
+    result = response.json()
+    
+    if 'id' in result:
+        creation_id = result['id']
+        # שלב ב': פרסום המדיה בפועל
+        publish_url = f"https://graph.facebook.com/v18.0/{instagram_account_id}/media_publish"
+        publish_payload = {
+            'creation_id': creation_id,
+            'access_token': access_token
+        }
+        requests.post(publish_url, data=publish_payload)
+        return "הפוסט פורסם בהצלחה! 🚀"
+    else:
+        return "שגיאה בפרסום. בדקי את החיבור."
             st.rerun()
