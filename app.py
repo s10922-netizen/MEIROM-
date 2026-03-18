@@ -5,7 +5,7 @@ from datetime import datetime, timedelta
 
 # --- חיבור ל-GROQ ---
 try:
-    client = Groq(api_key=st.secrets["GROQ_KEY"])
+    client = Groq(api_key="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")
 except:
     st.error("Missing GROQ_KEY in secrets!")
 
