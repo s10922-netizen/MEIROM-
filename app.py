@@ -18,7 +18,7 @@ except:
     st.error("Missing API Key")
     st.stop()
 
-# --- 2. עיצוב CYBER-MAGIC UI ---
+# --- 2. עיצוב Cyber-SaaS (נקי וממורכז) ---
 st.markdown("""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Assistant:wght@300;700&family=Orbitron:wght@700&display=swap');
@@ -31,27 +31,37 @@ st.markdown("""
 
     .cyber-title {
         font-family: 'Orbitron', sans-serif;
-        font-size: 38px; font-weight: 700;
+        font-size: 42px; font-weight: 700;
         background: linear-gradient(90deg, #00f2fe, #7c3aed);
         -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-        margin-bottom: 25px;
+        margin-top: 50px; margin-bottom: 30px;
     }
 
+    /* כפתורי ענק נקיים */
     .stButton>button {
         background: linear-gradient(135deg, #6366f1, #a855f7);
-        color: white; border-radius: 25px; height: 85px;
+        color: white; border-radius: 20px; height: 80px;
         font-size: 24px; font-weight: 700; width: 100%;
-        border: none; margin: 15px 0;
-        box-shadow: 0 10px 20px rgba(124, 58, 237, 0.3);
+        border: none; margin: 10px 0;
+        box-shadow: 0 8px 15px rgba(124, 58, 237, 0.2);
+        transition: 0.3s ease;
+    }
+    .stButton>button:hover {
+        transform: scale(1.02); box-shadow: 0 12px 25px rgba(0, 242, 254, 0.4);
     }
 
-    .glass-card {
-        background: rgba(255, 255, 255, 0.05);
-        border-radius: 30px; padding: 40px; border: 1px solid rgba(255, 255, 255, 0.1);
-        margin-bottom: 20px;
+    /* תיבות קלט נקיות בלי ריבועים שחורים מסביב */
+    input {
+        background-color: #111 !important;
+        color: #00f2fe !important;
+        border: 1px solid #333 !important;
+        border-radius: 12px !important;
+        height: 50px !important;
+        text-align: center !important;
     }
 
-    input { background-color: #1a1a1a !important; color: #00f2fe !important; border: 1px solid #444 !important; }
+    /* הסתרת כותרות Tabs שיוצרות בלגן */
+    .stTabs [data-baseweb="tab-list"] { justify-content: center; gap: 20px; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -64,99 +74,77 @@ def get_user_status(email):
         df = pd.read_csv(url)
         search_m = str(email).strip().lower()
         for _, row in df.iterrows():
-            row_str = " ".join(row.astype(str)).lower()
-            if search_m in row_str:
+            if search_m in " ".join(row.astype(str)).lower():
                 biz_name = str(row.iloc[-1]).split('|')[-1].replace('Biz:', '').strip()
                 return "RETURNING", biz_name
         return "NEW", None
     except: return "NEW", None
 
 def register_user(email, password, biz_name):
-    # שליחה ל-Google Form
-    payload = {
-        "entry.855862094": email, 
-        "entry.1847739029": f"Pass: {password} | Biz: {biz_name}"
-    }
-    try:
-        requests.post(FORM_URL, data=payload)
-        return True
-    except:
-        return False
+    payload = {"entry.855862094": email, "entry.1847739029": f"Pass: {password} | Biz: {biz_name}"}
+    try: requests.post(FORM_URL, data=payload); return True
+    except: return False
 
 # --- 4. זרימת עמודים ---
 if 'page' not in st.session_state: st.session_state.page = "auth"
 if 'user_email' not in st.session_state: st.session_state.user_email = ""
 if 'tool' not in st.session_state: st.session_state.tool = "home"
 
-# א. דף כניסה והרשמה (משולב)
+# דף כניסה והרשמה
 if st.session_state.page == "auth":
     st.markdown("<div class='cyber-title'>MAGIC OS</div>", unsafe_allow_html=True)
     
-    tab1, tab2 = st.tabs(["🔑 כניסה", "✨ הרשמה חדשה"])
+    tab1, tab2 = st.tabs(["🔑 כניסה", "✨ הרשמה"])
     
     with tab1:
-        st.markdown("<div class='glass-card'>", unsafe_allow_html=True)
-        l_mail = st.text_input("אימייל", key="login_m").strip().lower()
-        l_pass = st.text_input("סיסמה", type="password", key="login_p")
+        st.markdown("<br>", unsafe_allow_html=True)
+        l_mail = st.text_input("אימייל", key="l_m", placeholder="הכניסי מייל...").strip().lower()
+        l_pass = st.text_input("סיסמה", key="l_p", type="password", placeholder="הכניסי סיסמה...")
         if st.button("שיגור למערכת 🚀"):
             status, name = get_user_status(l_mail)
-            if status != "NEW":
+            if status != "NEW" or l_mail == MY_ADMIN_EMAIL:
                 st.session_state.user_email = l_mail
-                st.session_state.biz_name = name
+                st.session_state.biz_name = name if name else "מנכ\"לית"
                 st.session_state.page = "dashboard"
                 st.rerun()
-            else:
-                st.error("לא מצאנו אותך. אולי תירשמי בלשונית השנייה?")
-        st.markdown("</div>", unsafe_allow_html=True)
+            else: st.error("לא מצאנו אותך. אולי תירשמי?")
 
     with tab2:
-        st.markdown("<div class='glass-card'>", unsafe_allow_html=True)
-        r_mail = st.text_input("מייל לעסק", key="reg_m").strip().lower()
-        r_pass = st.text_input("בחרי סיסמה", type="password", key="reg_p")
-        r_biz = st.text_input("שם העסק שלך", key="reg_b")
+        st.markdown("<br>", unsafe_allow_html=True)
+        r_mail = st.text_input("מייל לעסק", key="r_m").strip().lower()
+        r_pass = st.text_input("סיסמה", key="r_p", type="password")
+        r_biz = st.text_input("שם העסק", key="r_b")
         if st.button("צור לי אימפריה ✨"):
             if r_mail and r_pass and r_biz:
                 if register_user(r_mail, r_pass, r_biz):
                     st.session_state.user_email = r_mail
                     st.session_state.biz_name = r_biz
-                    st.session_state.is_new = True
                     st.session_state.page = "dashboard"
                     st.rerun()
-                else: st.error("משהו השתבש ברישום. נסי שוב.")
-            else: st.warning("בבקשה מלאי את כל הפרטים.")
-        st.markdown("</div>", unsafe_allow_html=True)
+                else: st.error("שגיאה ברישום.")
 
-# ב. לוח בקרה
+# דף לוח בקרה
 elif st.session_state.page == "dashboard":
-    if st.session_state.user_email.lower() == MY_ADMIN_EMAIL.lower():
+    # פנייה מותאמת אישית
+    if st.session_state.user_email == MY_ADMIN_EMAIL:
         welcome = "ברוכה הבאה מנכ\"לית מיי ✨"
-    elif st.session_state.get('is_new'):
-        welcome = f"ברוכה הבאה לעסק {st.session_state.biz_name}!"
     else:
-        welcome = f"ברוכה השבה לעסק {st.session_state.biz_name}!"
+        welcome = f"ברוכה השבה לעסק {st.session_state.biz_name}"
 
-    st.markdown(f"<div class='cyber-title' style='font-size:30px;'>{welcome}</div>", unsafe_allow_html=True)
+    st.markdown(f"<div class='cyber-title' style='font-size:32px;'>{welcome}</div>", unsafe_allow_html=True)
     
     if st.session_state.tool == "home":
-        st.markdown("### מה היעד הבא שלך?")
-        if st.button("🤖 סוכן תוכן AI"): 
-            st.session_state.tool = "ai"
-            st.rerun()
-        if st.button("💬 צ'אט שירות לקוחות"): 
-            st.session_state.tool = "chat"
-            st.rerun()
+        st.markdown("<br><br>", unsafe_allow_html=True)
+        if st.button("🤖 סוכן תוכן AI"): st.session_state.tool = "ai"; st.rerun()
+        if st.button("💬 צ'אט שירות לקוחות"): st.session_state.tool = "chat"; st.rerun()
         
         st.markdown("---")
-        if st.button("התנתקות", key="logout"):
-            st.session_state.page = "auth"
-            st.session_state.tool = "home"
-            st.rerun()
+        if st.button("התנתקות"): st.session_state.page = "auth"; st.rerun()
     
     else:
-        st.markdown("<div class='glass-card'>", unsafe_allow_html=True)
         if st.session_state.tool == "ai":
             st.header("סוכן תוכן AI")
-            topic = st.text_input("על מה נכתוב?")
+            topic = st.text_input("נושא הפוסט?")
             if st.button("צור פוסט"):
                 res = client.chat.completions.create(model="llama-3.3-70b-versatile", messages=[{"role":"user","content":f"פוסט ל{st.session_state.biz_name} על {topic}"}])
                 st.info(res.choices[0].message.content)
@@ -168,7 +156,4 @@ elif st.session_state.page == "dashboard":
                 res = client.chat.completions.create(model="llama-3.3-70b-versatile", messages=[{"role":"system","content":f"נציגת שירות של {st.session_state.biz_name}"},{"role":"user","content":q}])
                 st.write(res.choices[0].message.content)
 
-        if st.button("חזרה לתפריט 🏠"):
-            st.session_state.tool = "home"
-            st.rerun()
-        st.markdown("</div>", unsafe_allow_html=True)
+        if st.button("חזרה לתפריט 🏠"): st.session_state.tool = "home"; st.rerun()
