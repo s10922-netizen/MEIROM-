@@ -10,6 +10,7 @@ st.set_page_config(page_title="MEIROM MAGIC", page_icon="🖤", layout="centered
 SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vR5MK0_eAs57RI4cek-pDbL8wepCfZmZcMZhDqu374yzHWVjPnNyr_DZEnVkh8wGpmrRF1SwHUKgt2h/pub?gid=1413597206&single=true&output=csv"
 FORM_URL = "https://docs.google.com/forms/d/e/1FAIpQLSdWPISX09Kj4Z2oQFSC6smC5KtXm1iVvSrc_5nxvvsFx6hX7Q/formResponse"
 
+# המייל של המנכ"לית
 MY_ADMIN_EMAIL = "Meiromp10@gmail.com" 
 
 try:
@@ -18,7 +19,7 @@ except:
     st.error("Missing API Key")
     st.stop()
 
-# --- 2. ZARA HEBREW DESIGN (נקי, בלי ריבועים מיותרים) ---
+# --- 2. ZARA HEBREW DESIGN (נקי לחלוטין) ---
 st.markdown("""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Assistant:wght@200;300;400;700&display=swap');
@@ -45,6 +46,7 @@ st.markdown("""
         color: #ffffff; border-radius: 0px; 
         height: 55px; font-size: 16px; font-weight: 300;
         width: 100%; border: none; transition: 0.3s;
+        margin-top: 20px;
     }
     .stButton>button:hover { background-color: #222; }
 
@@ -61,7 +63,7 @@ st.markdown("""
     }
     input:focus { border-bottom: 1px solid #000 !important; }
 
-    /* הסתרת רקעים כהים מיותרים */
+    /* הסרת רקעים כהים מיותרים */
     .stTabs [data-baseweb="tab-list"] { gap: 40px; justify-content: center; }
     .stTabs [aria-selected="true"] { color: #000 !important; border-bottom: 2px solid #000 !important; }
 </style>
@@ -71,13 +73,15 @@ st.markdown("""
 def check_status(email):
     email_clean = str(email).strip().lower()
     if email_clean == MY_ADMIN_EMAIL.lower():
-        return "ADMIN", "מנכ\"לית"
+        return "ADMIN", "מנכ\"לית מיי"
     try:
         url = f"{SHEET_CSV_URL}&t={time.time()}"
         df = pd.read_csv(url)
         for _, row in df.iterrows():
             if email_clean in " ".join(row.astype(str)).lower():
-                biz = str(row.iloc[-1]).split('|')[-1].replace('Biz:', '').strip()
+                # חילוץ שם עסק
+                info = str(row.iloc[-1])
+                biz = info.split('|')[-1].replace('Biz:', '').strip() if '|' in info else "העסק שלך"
                 return "USER", biz
         return "NEW", None
     except: return "NEW", None
@@ -85,6 +89,7 @@ def check_status(email):
 # --- 4. ניווט דפים ---
 if 'page' not in st.session_state: st.session_state.page = "auth"
 if 'user_email' not in st.session_state: st.session_state.user_email = ""
+if 'tool' not in st.session_state: st.session_state.tool = "home"
 
 if st.session_state.page == "auth":
     st.markdown("<div class='brand-title'>MEIROM MAGIC</div>", unsafe_allow_html=True)
@@ -115,20 +120,45 @@ if st.session_state.page == "auth":
             st.rerun()
 
 elif st.session_state.page == "dashboard":
-    welcome_msg = "ברוכה הבאה מנכ\"לית מיי ✨" if st.session_state.user_email == MY_ADMIN_EMAIL else f"ברוכה השבה, {st.session_state.biz_name}"
+    # תיקון השגיאה - וידוא שמשתמשים במשתנה הנכון
+    if st.session_state.user_email.lower() == MY_ADMIN_EMAIL.lower():
+        welcome_header = "ברוכה הבאה מנכ\"לית מיי ✨"
+    else:
+        welcome_header = f"ברוכה השבה, {st.session_state.biz_name}"
+
     st.markdown(f"<div class='brand-title' style='font-size:30px;'>{welcome_header}</div>", unsafe_allow_html=True)
     
-    st.markdown("<br><br>", unsafe_allow_html=True)
-    if st.button("סוכן תוכן AI"): st.session_state.tool = "ai"; st.rerun()
-    if st.button("צ'אט שירות לקוחות"): st.session_state.tool = "chat"; st.rerun()
+    if st.session_state.tool == "home":
+        st.markdown("<br><br>", unsafe_allow_html=True)
+        if st.button("סוכן תוכן AI"): 
+            st.session_state.tool = "ai"
+            st.rerun()
+        if st.button("צ'אט שירות לקוחות"): 
+            st.session_state.tool = "chat"
+            st.rerun()
+        
+        st.markdown("<br>", unsafe_allow_html=True)
+        if st.button("התנתקות"):
+            st.session_state.page = "auth"
+            st.session_state.tool = "home"
+            st.rerun()
     
-    if st.session_state.get('tool') == "ai":
-        st.markdown("---")
-        topic = st.text_input("על מה נכתוב היום?")
-        if st.button("ייצור תוכן ✨"):
-            res = client.chat.completions.create(model="llama-3.3-70b-versatile", messages=[{"role":"user","content":f"פוסט ל{st.session_state.biz_name}: {topic}"}])
-            st.info(res.choices[0].message.content)
+    else:
+        st.markdown("<br>", unsafe_allow_html=True)
+        if st.session_state.tool == "ai":
+            st.write("### סוכן תוכן AI")
+            topic = st.text_input("על מה נכתוב היום?")
+            if st.button("ייצור תוכן ✨"):
+                res = client.chat.completions.create(model="llama-3.3-70b-versatile", messages=[{"role":"user","content":f"פוסט ל{st.session_state.biz_name}: {topic}"}])
+                st.info(res.choices[0].message.content)
+        
+        elif st.session_state.tool == "chat":
+            st.write("### צ'אט שירות")
+            q = st.chat_input("דברי איתי...")
+            if q:
+                res = client.chat.completions.create(model="llama-3.3-70b-versatile", messages=[{"role":"system","content":f"נציגת שירות של {st.session_state.biz_name}"},{"role":"user","content":q}])
+                st.write(res.choices[0].message.content)
 
-    if st.button("התנתקות"):
-        st.session_state.page = "auth"
-        st.rerun()
+        if st.button("חזרה לתפריט 🏠"):
+            st.session_state.tool = "home"
+            st.rerun()
