@@ -13,16 +13,17 @@ except:
     st.error("Missing API Key")
     st.stop()
 
-# --- עיצוב סוכנות AI ---
+# --- עיצוב סוכנות AI יוקרתית ---
 st.markdown("""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Assistant:wght@200;400;700&display=swap');
-    html, body, [class*="st-"] { font-family: 'Assistant', sans-serif; direction: rtl; text-align: center; background-color: #fff; }
+    html, body, [class*="st-"] { font-family: 'Assistant', sans-serif; direction: rtl; text-align: center; background-color: #fff; color: #000; }
     .brand-title { font-size: 50px; font-weight: 700; margin-top: 50px; letter-spacing: 5px; background: linear-gradient(45deg, #000, #d4af37, #000); -webkit-background-clip: text; -webkit-text-fill-color: transparent; text-transform: uppercase; }
     .brand-tagline { font-size: 14px; letter-spacing: 5px; color: #d4af37; margin-bottom: 50px; text-transform: uppercase; }
-    .stButton>button { background-color: #000 !important; color: #fff !important; border-radius: 0px !important; height: 60px !important; width: 100% !important; border: none !important; font-size: 17px; margin-top: 20px; }
+    .stButton>button { background-color: #000 !important; color: #fff !important; border-radius: 0px !important; height: 60px !important; width: 100% !important; border: none !important; font-size: 17px; margin-top: 20px; transition: 0.3s; }
     .stButton>button:hover { background-color: #d4af37 !important; }
     input { background-color: transparent !important; border: none !important; border-bottom: 2px solid #eee !important; text-align: center !important; font-size: 20px !important; padding: 10px 0 !important; }
+    textarea { text-align: right !important; border: 1px solid #eee !important; border-radius: 0px !important; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -55,12 +56,12 @@ elif st.session_state.page == "dashboard":
     st.markdown("<div class='brand-title' style='font-size:30px;'>DASHBOARD</div>", unsafe_allow_html=True)
     st.write(f"WELCOME, {st.session_state.user_email.upper()}")
     
-    topic = st.text_area("על מה הסוכנות תעבוד היום?", placeholder="למשל: בושם יוקרתי...")
+    topic = st.text_area("מה המשימה של הסוכנות היום?", placeholder="למשל: בושם יוקרתי, סוודר...")
     
     if st.button("GENERATE MAGIC ✨"):
         if topic:
-            with st.spinner("סוכנות AI מייצרת עבורך תוכן ויזואלי..."):
-                # 1. טקסט
+            with st.spinner("סוכנות AI מעבדת נתונים..."):
+                # 1. יצירת טקסט
                 res = client.chat.completions.create(
                     model="llama-3.3-70b-versatile",
                     messages=[{"role":"system","content":"אתה סוכן AI יוקרתי לעסקים. כתוב פוסט קצר בעברית."},
@@ -68,28 +69,28 @@ elif st.session_state.page == "dashboard":
                 )
                 st.session_state.last_text = res.choices[0].message.content
                 
-                # 2. תרגום מהיר למילות מפתח
+                # 2. תרגום הנושא לאנגלית (כדי למצוא תמונה מדויקת)
                 trans = client.chat.completions.create(
                     model="llama-3.1-8b-instant",
-                    messages=[{"role":"system","content":"Translate to 3 English keywords. Only keywords."},
+                    messages=[{"role":"system","content":"Translate the topic to 2 keywords in English. Only keywords."},
                               {"role":"user","content":topic}]
                 )
                 kw = trans.choices[0].message.content.strip().replace(" ", ",")
                 
-                # 3. יצירת הקישור לתמונה
-                seed = int(time.time())
-                st.session_state.last_image_url = f"https://pollinations.ai/p/luxury,fashion,product,{kw}?width=1024&height=1024&seed={seed}&nologo=true"
+                # 3. מציאת תמונה (Unsplash Source - הכי יציב בעולם)
+                # השימוש ב-sig גורם לתמונה להשתנות בכל לחיצה
+                st.session_state.last_image_url = f"https://images.unsplash.com/photo-1?auto=format&fit=crop&w=1000&q=80&keywords=luxury,{kw}&sig={int(time.time())}"
+                
+                # בגלל ש-Unsplash Source הישן נסגר, נשתמש בפורמט החיפוש החופשי שלהם:
+                st.session_state.last_image_url = f"https://source.unsplash.com/featured/1024x1024?luxury,fashion,{kw}"
+                
                 st.session_state.magic_done = True
         else:
-            st.warning("אנא הכניסי נושא")
+            st.warning("PLEASE ENTER A TOPIC")
 
     if st.session_state.magic_done:
-        # הצגת התמונה באמצעות IFRAME (עקיפה סופית)
-        st.write("---")
-        st.markdown(f"""
-            <iframe src="{st.session_state.last_image_url}" width="100%" height="500" style="border:none; border-radius:10px;"></iframe>
-        """, unsafe_allow_html=True)
-        
+        # הצגת התמונה
+        st.image(st.session_state.last_image_url, use_container_width=True)
         st.info(st.session_state.last_text)
         
         wa_txt = urllib.parse.quote(st.session_state.last_text)
